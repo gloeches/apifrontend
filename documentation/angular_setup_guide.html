@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Angular Project Setup Guide</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            line-height: 1.6;
+            padding: 20px;
+        }
+        h1, h2 {
+            color: #333;
+        }
+        code {
+            background-color: #f4f4f4;
+            padding: 2px 4px;
+            border-radius: 4px;
+        }
+        pre {
+            background-color: #f4f4f4;
+            padding: 10px;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Angular Project Setup Guide (for Angular 21+)</h1>
+
+    <p>This guide provides instructions for creating a new Angular project with a scalable and maintainable architecture.</p>
+
+    <h2>1. Prerequisites</h2>
+    <ul>
+        <li>Node.js and npm (or yarn) installed.</li>
+        <li>Angular CLI installed globally: <code>npm install -g @angular/cli</code></li>
+    </ul>
+
+    <h2>2. Create the Angular Workspace</h2>
+    <p>Use the Angular CLI to generate a new workspace and initial application. In recent versions of Angular, standalone components are the default, so you don't need to pass a special flag for it.</p>
+    <pre><code>ng new my-app --routing --style=scss</code></pre>
+    <ul>
+        <li><code>--routing</code>: Generates a file with top-level routes and sets up the router.</li>
+        <li><code>--style=scss</code>: Sets the stylesheet format to SCSS.</li>
+    </ul>
+
+    <h3>Server-side Rendering (SSR) and Static Site Generation (SSG)</h3>
+    <p>When creating a new Angular project, the CLI might ask you if you'd like to enable Server-side Rendering (SSR) and Static Site Generation (SSG). Here's a brief explanation:</p>
+    <ul>
+        <li><strong>Server-side Rendering (SSR)</strong>: This means that the initial rendering of your Angular application happens on the server, and then the fully rendered HTML is sent to the client's browser. This improves initial load performance and search engine optimization (SEO) because search engine crawlers see a fully formed page immediately. It's great for content-heavy applications where SEO is crucial.</li>
+        <li><strong>Static Site Generation (SSG)</strong>: Similar to SSR, SSG also renders your application to HTML at build time. However, instead of rendering on-demand by a server, SSG pre-builds all possible pages into static HTML files. These static files can then be served very efficiently from a CDN. SSG is ideal for websites with content that doesn't change frequently, such as blogs, documentation sites, or marketing pages, offering excellent performance and security.</li>
+    </ul>
+    <p>Choosing to enable SSR/SSG depends on your application's needs. For most typical SPA (Single Page Application) use cases where SEO and initial load performance are not critical, you might not need them initially. However, for public-facing websites, considering SSR/SSG can be very beneficial.</p>
+
+    <p>Navigate into your new project directory:</p>
+    <pre><code>cd my-app</code></pre>
+
+    <h2>3. Project Structure for Standalone Applications</h2>
+    <p>With standalone components, `NgModule` is no longer required. A good architecture separates concerns by organizing your application by features. This makes it easier to manage.</p>
+
+    <pre><code>
+src/
+|-- app/
+|   |-- components/
+|   |   |-- my-reusable-component/
+|   |
+|   |-- features/
+|   |   |-- feature1/
+|   |   |   |-- feature1.component.ts
+|   |   |   |-- feature1.routes.ts
+|   |   |
+|   |   |-- feature2/
+|   |       |-- ...
+|   |
+|   |-- core/
+|   |   |-- guards/
+|   |   |-- interceptors/
+|   |   |-- models/
+|   |   |-- services/
+|   |
+|   |-- app.component.ts
+|   |-- app.config.ts
+|   |-- app.routes.ts
+|
+|-- assets/
+|-- environments/
+    </code></pre>
+
+    <h3>Generating Standalone Components, Directives, and Pipes</h3>
+    <p>By default, all generated components, directives, and pipes are standalone. You don't need to declare them in an `NgModule`.</p>
+    <pre><code>ng generate component features/my-feature/my-feature-component</code></pre>
+
+    <h3>Providing Services</h3>
+    <p>Services can be provided in the root of the application or on a specific route. To provide a service to the entire application, open <code>app.config.ts</code> and add it to the <code>providers</code> array:</p>
+    <pre><code>
+import { ApplicationConfig } from '@angular/core';
+import { provideRouter } from '@angular/router';
+import { routes } from './app.routes';
+import { MyService } from './core/services/my.service';
+
+export const appConfig: ApplicationConfig = {
+  providers: [
+    provideRouter(routes),
+    MyService
+  ]
+};
+    </code></pre>
+
+    <h2>4. Lazy Loading Routes and Components</h2>
+    <p>In your <code>app.routes.ts</code>, you can lazy load a set of routes or a single component.</p>
+    
+    <h4>Lazy Loading a Set of Routes</h4>
+    <p>Create a file for your feature's routes, for example <code>feature1.routes.ts</code>. Then in <code>app.routes.ts</code>:</p>
+    <pre><code>
+import { Routes } from '@angular/router';
+
+export const routes: Routes = [
+  {
+    path: 'feature1',
+    loadChildren: () => import('./features/feature1/feature1.routes').then(m => m.FEATURE1_ROUTES)
+  },
+  // ... other routes
+];
+    </code></pre>
+
+    <h4>Lazy Loading a Component</h4>
+    <p>You can also directly lazy-load a standalone component for a route:</p>
+    <pre><code>
+import { Routes } from '@angular/router';
+
+export const routes: Routes = [
+  {
+    path: 'lazy-component',
+    loadComponent: () => import('./features/lazy-component/lazy.component').then(m => m.LazyComponent)
+  },
+  // ... other routes
+];
+    </code></pre>
+
+    <h2>5. State Management</h2>
+    <p>For complex applications, consider using a state management library like NgRx or NGXS. These libraries are compatible with standalone applications and help centralize your application's state and logic.</p>
+
+    <h2>6. Running the Application</h2>
+    <p>To see your application in action, run the development server:</p>
+    <pre><code>ng serve</code></pre>
+    <p>Open your browser to <code>http://localhost:4200/</code>.</p>
+
+    <h2>7. Accessing a REST API with an Angular Material Form</h2>
+    <p>This section explains how to create a form with Angular Material to send data to a REST API.</p>
+
+    <h3>7.1. Set up Angular Material</h3>
+    <p>First, add Angular Material to your project:</p>
+    <pre><code>ng add @angular/material</code></pre>
+    <p>The command will ask you to choose a theme and set up global typography styles.</p>
+
+    <h3>7.2. Set up HttpClient</h3>
+    <p>To make HTTP requests, you need to configure the `HttpClient`. Open <code>app.config.ts</code> and add <code>provideHttpClient()</code> to the `providers` array.</p>
+    <pre><code>
+import { ApplicationConfig } from '@angular/core';
+import { provideRouter } from '@angular/router';
+import { provideHttpClient } from '@angular/common/http';
+import { routes } from './app.routes';
+
+export const appConfig: ApplicationConfig = {
+  providers: [
+    provideRouter(routes),
+    provideHttpClient()
+  ]
+};
+    </code></pre>
+
+    <h3>7.3. Create an API Service</h3>
+    <p>Generate a service to handle the API calls.</p>
+    <pre><code>ng generate service core/services/api</code></pre>
+    <p>Open <code>api.service.ts</code> and add the following code:</p>
+    <pre><code>
+import { Injectable } from '@angular/core';
+import { HttpClient, HttpParams } from '@angular/common/http';
+import { Observable } from 'rxjs';
+
+@Injectable({
+  providedIn: 'root'
+})
+export class ApiService {
+  private apiUrl = 'http://springboot-esxi:5000/api';
+
+  constructor(private http: HttpClient) { }
+
+  getData(value: number): Observable<any> {
+    const params = new HttpParams().set('value', value.toString());
+    return this.http.get(this.apiUrl, { params });
+  }
+}
+    </code></pre>
+
+    <h3>7.4. Create the Form Component</h3>
+    <p>Generate a new component for the form. Ensure you follow Angular's naming conventions:</p>
+    <pre><code>ng generate component features/api-form</code></pre>
+    <p>When creating component files manually or if they are generated with non-standard names, you might encounter issues. For instance, a common mistake is naming the component TypeScript file `api-form.ts` instead of `api-form.component.ts`, or having incorrect template/style URLs. Also, ensure all necessary imports are present and correct.</p>
+    <p>Here's how the corrected component's TypeScript file, <code>src/app/features/api-form/api-form.component.ts</code>, should look:</p>
+    <pre><code>
+import { Component, inject, ChangeDetectorRef } from '@angular/core'; // Ensure 'inject' and 'ChangeDetectorRef' are imported
+import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { MatButtonModule } from '@angular/material/button';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
+import { MatCardModule } from '@angular/material/card';
+import { CommonModule } from '@angular/common';
+import { Api } from '../../core/services/api'; // Import as 'Api' since that's the class name
+
+@Component({
+  selector: 'app-api-form',
+  standalone: true,
+  imports: [
+    CommonModule,
+    ReactiveFormsModule,
+    MatFormFieldModule,
+    MatInputModule,
+    MatButtonModule,
+    MatCardModule
+  ],
+  templateUrl: './api-form.component.html', // Corrected template URL
+  styleUrl: './api-form.component.scss',   // Corrected style URL, if you have one
+})
+export class ApiFormComponent { // Component class name should match file name convention
+  private fb = inject(FormBuilder);
+  private apiService = inject(Api); // Inject as 'Api', not 'ApiService' as per api.ts
+  private cdr = inject(ChangeDetectorRef); // Inject ChangeDetectorRef
+
+  public apiResponse: any;
+
+  form = this.fb.group({
+    value: ['', [Validators.required, Validators.pattern('^[0-9]*$')]]
+  });
+
+  onSubmit() {
+    if (this.form.valid) {
+      const value = parseInt(this.form.value.value!, 10);
+      this.apiService.getData(value).subscribe(response => {
+        console.log('API Response:', response);
+        this.apiResponse = response; // Assign response to the new property
+        this.cdr.markForCheck(); // Manually trigger change detection
+      });
+    }
+  }
+}
+    </code></pre>
+    <p>Next, create the template in <code>src/app/features/api-form/api-form.component.html</code>:</p>
+    <p><strong>Note on Control Flow:</strong> Recent versions of Angular (17+) have introduced a new, built-in control flow syntax (e.g., <code>@if</code>, <code>@for</code>, <code>@switch</code>). While the older <code>*ngIf</code> directive is not yet deprecated, the new syntax is recommended for its improved performance and more intuitive, JavaScript-like feel. The example below uses the new <code>@if</code> syntax.</p>
+    <pre><code>
+&lt;!-- In src/app/features/api-form/api-form.component.html --&gt;
+&lt;div style="display: flex; justify-content: center; align-items: center; min-height: 50vh; flex-direction: column; gap: 20px;"&gt;
+  &lt;mat-card style="width: 400px; padding: 20px;"&gt;
+    &lt;mat-card-title&gt;Calculate Square&lt;/mat-card-title&gt;
+    &lt;mat-card-content&gt;
+      &lt;p&gt;Enter a number below to calculate its square. Only numeric values are accepted.&lt;/p&gt;
+      &lt;form [formGroup]="form" (ngSubmit)="onSubmit()"&gt;
+        &lt;mat-form-field appearance="fill" style="width: 100%;"&gt;
+          &lt;mat-label&gt;Enter a number&lt;/mat-label&gt;
+          &lt;input matInput formControlName="value" type="text"&gt;
+          @if (form.get('value')?.hasError('required')) {
+            &lt;mat-error&gt;This field is required.&lt;/mat-error&gt;
+          }
+          @if (form.get('value')?.hasError('pattern')) {
+            &lt;mat-error&gt;Please enter a valid number.&lt;/mat-error&gt;
+          }
+        &lt;/mat-form-field&gt;
+
+        &lt;button mat-raised-button color="primary" type="submit" [disabled]="!form.valid" style="width: 100%; margin-top: 10px;"&gt;Calculate Square&lt;/button&gt;
+      &lt;/form&gt;
+    &lt;/mat-card-content&gt;
+  &lt;/mat-card&gt;
+
+  @if (apiResponse) {
+    &lt;mat-card style="width: 400px; padding: 20px;"&gt;
+      &lt;mat-card-title&gt;Result&lt;/mat-card-title&gt;
+      &lt;mat-card-content&gt;
+        &lt;h3&gt;The square of {{ apiResponse.input }} is {{ apiResponse.square }}&lt;/h3&gt;
+        &lt;p&gt;Full JSON Response:&lt;/p&gt;
+        &lt;pre&gt;{{ apiResponse | json }}&lt;/pre&gt;
+      &lt;/mat-card-content&gt;
+    &lt;/mat-card&gt;
+  }
+&lt;/div&gt;
+    </code></pre>
+    
+    <h3>7.5. Add the Component to your Application</h3>
+    <p><em>Note: When you create a new Angular project using <code>ng new</code>, the files <code>app.component.html</code> and <code>app.component.ts</code> are generated by default, even for standalone applications.</em></p>
+    <p>Finally, add your new `ApiFormComponent` to another component's template, for example in `app.component.html`.</p>
+    <pre><code>
+&lt;router-outlet&gt;&lt;/router-outlet&gt;
+&lt;app-api-form&gt;&lt;/app-api-form&gt;
+    </code></pre>
+    <p>And update `app.component.ts` to import it:</p>
+    <pre><code>
+import { Component } from '@angular/core';
+import { RouterOutlet } from '@angular/router';
+import { ApiFormComponent } from './features/api-form/api-form.component';
+
+@Component({
+  selector: 'app-root',
+  standalone: true,
+  imports: [RouterOutlet, ApiFormComponent],
+  templateUrl: './app.component.html',
+})
+export class AppComponent {
+  title = 'my-app';
+}
+    </code></pre>
+
+    <h3>7.6. Troubleshooting: UI Not Updating on First Click</h3>
+    <p>You are right to notice that sometimes the view does not update on the first click, even when `console.log` shows the data has arrived. This is a classic <strong>Change Detection</strong> issue in Angular.</p>
+    <p>While Angular is usually smart enough to update the view when data changes, sometimes it needs a hint. This often happens if the component is using the `OnPush` change detection strategy. With `OnPush`, Angular only re-renders the component if its inputs change or if an event originates from its own template. An asynchronous event like an API response returning within a service doesn't always trigger it.</p>
+    <p>The correct way to solve this is to manually tell Angular that the component needs to be checked for updates. You do this by injecting the `ChangeDetectorRef` and calling its `markForCheck()` method after your data has been updated, as shown in the updated code for <code>api-form.component.ts</code> in section 7.4.</p>
+
+    <h2>8. Handling CORS Errors during Development</h2>
+    <p>When your Angular application (running on <code>localhost:4200</code>) tries to communicate with a backend API on a different domain or port, you will likely encounter a <strong>CORS (Cross-Origin Resource Sharing)</strong> error. This is a security feature built into web browsers to prevent a web page from making requests to a different domain than the one that served the page.</p>
+    <p>The error "No 'Access-Control-Allow-Origin' header is present on the requested resource" means your backend server is not configured to accept requests from your Angular development server. While the correct long-term solution is to configure the backend server to allow your domain, a common and effective solution during development is to use Angular's built-in proxy feature.</p>
+
+    <h3>8.1. Create a Proxy Configuration File</h3>
+    <p>In the root of your Angular project, create a new file named <code>proxy.conf.json</code>. This file will tell the Angular development server to forward certain requests to your backend server.</p>
+    <p>Add the following content to <code>proxy.conf.json</code>:</p>
+    <pre><code>
+{
+  "/api": {
+    "target": "http://192.168.0.148:2000",
+    "secure": false,
+    "logLevel": "debug"
+  }
+}
+    </code></pre>
+    <ul>
+      <li><code>/api</code>: This means any request from your Angular app that starts with <code>/api</code> will be forwarded.</li>
+      <li><code>target</code>: This is the address of your backend API server.</li>
+      <li><code>secure: false</code>: Set this if your backend server is not using HTTPS.</li>
+      <li><code>logLevel: "debug"</code>: This will print information about the proxied requests in your terminal, which is useful for debugging.</li>
+    </ul>
+
+    <h3>8.2. Update Angular Configuration</h3>
+    <p>Now, you need to tell the Angular CLI to use this proxy configuration. Open your <code>angular.json</code> file and find the <code>serve</code> target (under <code>projects > your-app-name > architect > serve</code>). Add a <code>proxyConfig</code> option to the <code>options</code> section:</p>
+    <pre><code>
+...
+"architect": {
+  "serve": {
+    "builder": "@angular-devkit/build-angular:dev-server",
+    "configurations": {
+      "production": {
+        ...
+      },
+      "development": {
+        ...
+      }
+    },
+    "defaultConfiguration": "development",
+    "options": {
+      "proxyConfig": "proxy.conf.json"
+    }
+  },
+...
+    </code></pre>
+
+    <h3>8.3. Update the API Service</h3>
+    <p>The final step is to change the URL in your <code>ApiService</code> to a relative path. The Angular dev server will intercept this request and forward it to your backend. Open <code>src/app/core/services/api.service.ts</code> and change the <code>apiUrl</code>:</p>
+    <pre><code>
+// ...
+export class ApiService {
+  private apiUrl = '/api'; // Use the relative path for the proxy
+
+  constructor(private http: HttpClient) { }
+// ...
+    </code></pre>
+
+    <h3>8.4. Restart the Development Server</h3>
+    <p>For these changes to take effect, you must stop your `ng serve` command if it's running and restart it.</p>
+    <pre><code>ng serve</code></pre>
+    <p>Now, when your application makes a request to <code>/api</code>, the Angular development server will proxy it to <code>http://192.168.0.148:2000/api</code>, and you should no longer see the CORS error.</p>
+
+    <h3>8.5. Alternative: Enabling CORS on the Flask Server</h3>
+    <p>If you have control over your backend server and it is a Python Flask application, you can handle CORS directly on the server. This is often the better long-term solution. You can use the <code>Flask-Cors</code> extension.</p>
+    
+    <h4>Step 1: Install Flask-Cors</h4>
+    <p>First, install the library in your Python environment:</p>
+    <pre><code>pip install -U flask-cors</code></pre>
+
+    <h4>Step 2: Update your Flask Application</h4>
+    <p>In your main Flask application file (e.g., <code>app.py</code>), you need to import and initialize the <code>CORS</code> extension. You can enable it for your entire application and specify which origins are allowed.</p>
+    <pre><code>
+from flask import Flask
+from flask_cors import CORS
+
+app = Flask(__name__)
+
+# Configure CORS
+# This will allow requests from http://localhost:4200 to all routes
+CORS(app, resources={r"/api/*": {"origins": "http://localhost:4200"}})
+
+@app.route("/api/some_endpoint")
+def my_api():
+    # Your API logic here
+    return {"message": "Hello from Flask!"}
+
+if __name__ == '__main__':
+    app.run(debug=True)
+    </code></pre>
+    <p>In this example:</p>
+    <ul>
+        <li><code>CORS(app, ...)</code> initializes the extension.</li>
+        <li><code>resources={r"/api/*": ...}</code> applies the CORS policy only to routes that start with <code>/api/</code>.</li>
+        <li><code>"origins": "http://localhost:4200"</code> specifies that only requests from your Angular development server are allowed. For production, you would change this to your deployed front-end's domain.</li>
+    </ul>
+    <p>With this server-side change, you would not need to use the Angular proxy, and you can keep the full, absolute URL in your <code>ApiService</code>.</p>
+
+    <h2>9. Best Practices: Using the Async Pipe for API Data</h2>
+    <p>That's an excellent question. While using <code>ChangeDetectorRef.markForCheck()</code> is the correct way to solve the "double click" issue in components using the <code>OnPush</code> strategy, there is a more modern and often better approach in Angular: using the <strong><code>async</code> pipe</strong>.</p>
+    <p>The <code>async</code> pipe is a powerful feature that simplifies your component code significantly. Here’s why it's considered a best practice:</p>
+    <ul>
+        <li><strong>No Manual Subscriptions:</strong> You don't need to call <code>.subscribe()</code> in your component's code.</li>
+        <li><strong>Automatic Unsubscription:</strong> It automatically unsubscribes from the observable when the component is destroyed, preventing memory leaks.</li>
+        <li><strong>Automatic Change Detection:</strong> It automatically triggers change detection (`markForCheck`) whenever the observable emits a new value. This solves the "double click" problem elegantly without needing `ChangeDetectorRef`.</li>
+    </ul>
+
+    <h3>9.1. Refactoring to Use the Async Pipe</h3>
+    <p>Let's refactor the <code>ApiFormComponent</code> to use this declarative pattern.</p>
+    
+    <h4>Updated Component TypeScript (<code>api-form.component.ts</code>)</h4>
+    <p>Notice we no longer need <code>ChangeDetectorRef</code> or a manual subscription. We simply expose the observable stream (conventionally named with a `$` suffix) to the template.</p>
+    <pre><code>
+import { Component, inject } from '@angular/core';
+import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { MatButtonModule } from '@angular/material/button';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
+import { MatCardModule } from '@angular/material/card';
+import { CommonModule } from '@angular/common';
+import { Api } from '../../core/services/api';
+import { Observable, of } from 'rxjs'; // Import Observable
+
+@Component({
+  selector: 'app-api-form',
+  standalone: true,
+  imports: [
+    CommonModule,
+    ReactiveFormsModule,
+    MatFormFieldModule,
+    MatInputModule,
+    MatButtonModule,
+    MatCardModule
+  ],
+  templateUrl: './api-form.component.html',
+  styleUrl: './api-form.component.scss',
+})
+export class ApiFormComponent {
+  private fb = inject(FormBuilder);
+  private apiService = inject(Api);
+
+  public response$!: Observable<any>; // The '$' is a convention for observables
+
+  form = this.fb.group({
+    value: ['', [Validators.required, Validators.pattern('^[0-9]*$')]]
+  });
+
+  onSubmit() {
+    if (this.form.valid) {
+      const value = parseInt(this.form.value.value!, 10);
+      // Assign the observable directly to the property, don't subscribe here
+      this.response$ = this.apiService.getData(value);
+    }
+  }
+}
+    </code></pre>
+
+    <h4>Updated Component Template (<code>api-form.component.html</code>)</h4>
+    <p>In the template, we use the `async` pipe to subscribe to `response$` and unwrap its value. The `@if` block now also assigns the result to a template variable `apiResponse` for easy access.</p>
+    <pre><code>
+&lt;!-- In src/app/features/api-form/api-form.component.html --&gt;
+&lt;div style="display: flex; justify-content: center; align-items: center; min-height: 50vh; flex-direction: column; gap: 20px;"&gt;
+  &lt;!-- Form Card --&gt;
+  &lt;mat-card style="width: 400px; padding: 20px;"&gt;
+    ... (form content remains the same) ...
+  &lt;/mat-card&gt;
+
+  @if (response$ | async; as apiResponse) {
+    &lt;mat-card style="width: 400px; padding: 20px;"&gt;
+      &lt;mat-card-title&gt;Result&lt;/mat-card-title&gt;
+      &lt;mat-card-content&gt;
+        &lt;h3&gt;The square of {{ apiResponse.input }} is {{ apiResponse.square }}&lt;/h3&gt;
+        &lt;p&gt;Full JSON Response:&lt;/p&gt;
+        &lt;pre&gt;{{ apiResponse | json }}&lt;/pre&gt;
+      &lt;/mat-card-content&gt;
+    &lt;/mat-card&gt;
+  }
+&lt;/div&gt;
+    </code></pre>
+
+    <h3>Conclusion: Which is "Best"?</h3>
+    <p>While `markForCheck()` is a valid tool, using the <strong><code>async</code> pipe</strong> is generally considered the "best" and most idiomatic Angular practice for displaying data from observables. It leads to cleaner, more declarative, and less error-prone component code.</p>
+
+    <h2>10. The Ultimate Solution: Using Signals for State Management</h2>
+    <p>You've hit on the most modern and powerful feature in recent versions of Angular. For new Angular applications (v17+), using <strong>Signals</strong> is arguably the best proposal for managing state that comes from an API or any other asynchronous source.</p>
+    <p>Signals provide several key advantages over both manual change detection and the `async` pipe:</p>
+    <ul>
+        <li><strong>Fine-Grained Reactivity:</strong> When a signal's value changes, Angular knows precisely which parts of the view depend on it and updates only them. This is potentially more efficient than the component-level checks triggered by `markForCheck` or the `async` pipe.</li>
+        <li><strong>Simplicity and Clarity:</strong> The component code becomes very simple. You don't need `ChangeDetectorRef`, and you don't need to manage observables in the template with an `async` pipe. The flow is easy to follow: an event happens, you call a service, and you `set` the new value on your signal.</li>
+        <li><strong>Glitch-Free & Synchronous:</strong> Changes to signals are propagated synchronously, preventing intermediate inconsistent states that can sometimes occur in complex reactive systems.</li>
+    </ul>
+
+    <h3>10.1. Refactoring to Use Signals</h3>
+    <p>Let's refactor the <code>ApiFormComponent</code> one last time to use this cutting-edge, signal-based pattern.</p>
+
+    <h4>Updated Component TypeScript (<code>api-form.component.ts</code>)</h4>
+    <p>We import <code>signal</code> from <code>@angular/core</code>. The `apiResponse` is now a signal, initialized to `undefined`. In our subscription, we simply `.set()` its new value.</p>
+    <pre><code>
+import { Component, inject, signal } from '@angular/core'; // Import signal
+import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { MatButtonModule } from '@angular/material/button';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
+import { MatCardModule } from '@angular/material/card';
+import { CommonModule } from '@angular/common';
+import { Api } from '../../core/services/api';
+
+@Component({
+  selector: 'app-api-form',
+  standalone: true,
+  imports: [ /* ... same imports as before ... */ ],
+  templateUrl: './api-form.component.html',
+  styleUrl: './api-form.component.scss',
+})
+export class ApiFormComponent {
+  private fb = inject(FormBuilder);
+  private apiService = inject(Api);
+
+  // Create a writable signal for the API response
+  public apiResponse = signal&lt;any | undefined&gt;(undefined);
+
+  form = this.fb.group({
+    value: ['', [Validators.required, Validators.pattern('^[0-9]*$')]]
+  });
+
+  onSubmit() {
+    if (this.form.valid) {
+      const value = parseInt(this.form.value.value!, 10);
+      this.apiService.getData(value).subscribe(response => {
+        console.log('API Response:', response);
+        // Set the signal's new value
+        this.apiResponse.set(response);
+      });
+    }
+  }
+}
+    </code></pre>
+
+    <h4>Updated Component Template (<code>api-form.component.html</code>)</h4>
+    <p>The template becomes even simpler. To get the value of a signal, you treat it like a function call (e.g., `apiResponse()`). The `@if` block and data bindings are updated accordingly.</p>
+    <pre><code>
+&lt;!-- In src/app/features/api-form/api-form.component.html --&gt;
+&lt;div style="display: flex; justify-content: center; align-items: center; min-height: 50vh; flex-direction: column; gap: 20px;"&gt;
+  &lt;!-- Form Card --&gt;
+  &lt;mat-card style="width: 400px; padding: 20px;"&gt;
+    ... (form content remains the same) ...
+  &lt;/mat-card&gt;
+
+  @if (apiResponse()) {
+    &lt;mat-card style="width: 400px; padding: 20px;"&gt;
+      &lt;mat-card-title&gt;Result&lt;/mat-card-title&gt;
+      &lt;mat-card-content&gt;
+        &lt;h3&gt;The square of {{ apiResponse()?.input }} is {{ apiResponse()?.square }}&lt;/h3&gt;
+        &lt;p&gt;Full JSON Response:&lt;/p&gt;
+        &lt;pre&gt;{{ apiResponse() | json }}&lt;/pre&gt;
+      &lt;/mat-card-content&gt;
+    &lt;/mat-card&gt;
+  }
+&lt;/div&gt;
+    </code></pre>
+
+    <h3>Conclusion: Signals as the "Best" Proposal</h3>
+    <p>Yes, for new applications, using <strong>Signals is the best proposal</strong>. It provides the most efficient reactivity model out-of-the-box and leads to code that is often simpler to write and reason about than previous patterns. It effectively solves the change detection problem by making reactivity explicit and fine-grained.</p>
+</body>
+</html>

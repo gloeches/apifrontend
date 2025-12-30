@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Angular Project Setup Guide (Final)</title>
+    <style>
+        body { font-family: sans-serif; line-height: 1.6; padding: 20px; }
+        h1, h2, h3 { color: #333; }
+        code { background-color: #f4f4f4; padding: 2px 4px; border-radius: 4px; }
+        pre { background-color: #f4f4f4; padding: 10px; border-radius: 4px; }
+    </style>
+</head>
+<body>
+
+    <h1>Angular Project Setup Guide (Final Version)</h1>
+    <p>This guide provides a focused, best-practice approach for creating a new Angular project with a scalable architecture and handling API interactions using modern features like Signals.</p>
+
+    <h2>1. Prerequisites & Workspace Setup</h2>
+    <ul>
+        <li>Node.js and npm (or yarn) installed.</li>
+        <li>Angular CLI installed globally: <code>npm install -g @angular/cli</code></li>
+    </ul>
+    <p>Create the Angular workspace using the following command. Standalone components are the default in recent versions.</p>
+    <pre><code>ng new my-app --routing --style=scss</code></pre>
+
+    <h2>2. Project Structure & Core Concepts</h2>
+    <p>A good architecture separates concerns by feature. Even without NgModules, you should organize your code into directories for features, core services, and shared components.</p>
+    <pre><code>
+src/app/
+|-- features/
+|   |-- api-form/
+|       |-- api-form.component.ts
+|       |-- api-form.component.html
+|       |-- api-form.component.scss
+|
+|-- core/
+|   |-- services/
+|       |-- api.service.ts
+|
+|-- app.component.ts
+|-- app.config.ts
+|-- app.routes.ts
+    </code></pre>
+
+    <h2>3. Creating the API Interaction Form</h2>
+    <p>This section covers creating a form that interacts with a REST API, displays a loading indicator, and presents the result, all using Angular Signals.</p>
+
+    <h3>3.1. Set up Angular Material & HttpClient</h3>
+    <p>First, add Angular Material:</p>
+    <pre><code>ng add @angular/material</code></pre>
+    <p>Next, configure `HttpClient` in <code>app.config.ts</code>:</p>
+    <pre><code>
+import { ApplicationConfig } from '@angular/core';
+import { provideRouter } from '@angular/router';
+import { provideHttpClient } from '@angular/common/http';
+import { routes } from './app.routes';
+
+export const appConfig: ApplicationConfig = {
+  providers: [
+    provideRouter(routes),
+    provideHttpClient()
+  ]
+};
+    </code></pre>
+
+    <h3>3.2. Create the API Service</h3>
+    <p>Generate a service for API calls:</p>
+    <pre><code>ng generate service core/services/api</code></pre>
+    <p>In <code>api.service.ts</code>, define the `getData` method:</p>
+    <pre><code>
+import { Injectable } from '@angular/core';
+import { HttpClient, HttpParams } from '@angular/common/http';
+import { Observable } from 'rxjs';
+
+@Injectable({ providedIn: 'root' })
+export class Api {
+  private apiUrl = 'http://springboot-esxi:5000/api'; // Or '/api' if using a proxy
+
+  constructor(private http: HttpClient) { }
+
+  getData(value: number): Observable<any> {
+    const params = new HttpParams().set('value', value.toString());
+    return this.http.get(this.apiUrl, { params });
+  }
+}
+    </code></pre>
+
+    <h3>3.3. The Ultimate Solution: Form Component with Signals</h3>
+    <p>Using <strong>Signals</strong> is the best proposal for managing state from asynchronous operations in modern Angular. It provides fine-grained reactivity and simplifies the component's logic.</p>
+    
+    <h4>Component TypeScript (<code>api-form.component.ts</code>)</h4>
+    <p>We'll create two signals: one for the loading state and one for the API response. The `finalize` operator from RxJS is used to ensure the loading state is reset even if the API call errors.</p>
+    <pre><code>
+import { Component, inject, signal } from '@angular/core';
+import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { finalize } from 'rxjs';
+
+// Material Module Imports
+import { MatButtonModule } from '@angular/material/button';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
+import { MatCardModule } from '@angular/material/card';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { CommonModule } from '@angular/common';
+
+import { Api } from '../../core/services/api';
+
+@Component({
+  selector: 'app-api-form',
+  standalone: true,
+  imports: [
+    CommonModule,
+    ReactiveFormsModule,
+    MatFormFieldModule,
+    MatInputModule,
+    MatButtonModule,
+    MatCardModule,
+    MatProgressSpinnerModule
+  ],
+  templateUrl: './api-form.component.html',
+  styleUrl: './api-form.component.scss',
+})
+export class ApiFormComponent {
+  private fb = inject(FormBuilder);
+  private apiService = inject(Api);
+
+  public isLoading = signal(false);
+  public apiResponse = signal&lt;any | undefined&gt;(undefined);
+
+  form = this.fb.group({
+    value: ['', [Validators.required, Validators.pattern('^[0-9]*$')]]
+  });
+
+  onSubmit() {
+    if (this.form.invalid) {
+      return;
+    }
+    this.isLoading.set(true);
+    this.apiResponse.set(undefined); // Clear previous results
+    
+    const value = parseInt(this.form.value.value!, 10);
+    this.apiService.getData(value).pipe(
+      finalize(() => this.isLoading.set(false))
+    ).subscribe(response => {
+      this.apiResponse.set(response);
+    });
+  }
+}
+    </code></pre>
+
+    <h4>Component Template (<code>api-form.component.html</code>)</h4>
+    <p>The template uses the signals to conditionally show a loading spinner, disable the button, and display the final result.</p>
+    <pre><code>
+&lt;div style="display: flex; justify-content: center; align-items: center; min-height: 50vh; flex-direction: column; gap: 20px;"&gt;
+  &lt;mat-card style="width: 400px; padding: 20px;"&gt;
+    &lt;mat-card-title&gt;Calculate Square&lt;/mat-card-title&gt;
+    &lt;mat-card-content&gt;
+      &lt;p&gt;Enter a number below to calculate its square. Only numeric values are accepted.&lt;/p&gt;
+      &lt;form [formGroup]="form" (ngSubmit)="onSubmit()"&gt;
+        &lt;mat-form-field appearance="fill" style="width: 100%;"&gt;
+          &lt;mat-label&gt;Enter a number&lt;/mat-label&gt;
+          &lt;input matInput formControlName="value" type="text"&gt;
+          @if (form.get('value')?.hasError('required')) {
+            &lt;mat-error&gt;This field is required.&lt;/mat-error&gt;
+          }
+          @if (form.get('value')?.hasError('pattern')) {
+            &lt;mat-error&gt;Please enter a valid number.&lt;/mat-error&gt;
+          }
+        &lt;/mat-form-field&gt;
+
+        &lt;div style="position: relative; width: 100%; margin-top: 10px;"&gt;
+          &lt;button mat-raised-button color="primary" type="submit" [disabled]="!form.valid || isLoading()" style="width: 100%;"&gt;
+            @if (isLoading()) {
+              &lt;span&gt;Calculating...&lt;/span&gt;
+            } @else {
+              &lt;span&gt;Calculate Square&lt;/span&gt;
+            }
+          &lt;/button&gt;
+          @if (isLoading()) {
+            &lt;mat-spinner [diameter]="30" style="position: absolute; right: 10px; top: 5px;"&gt;&lt;/mat-spinner&gt;
+          }
+        &lt;/div&gt;
+      &lt;/form&gt;
+    &lt;/mat-card-content&gt;
+  &lt;/mat-card&gt;
+
+  @if (apiResponse()) {
+    &lt;mat-card style="width: 400px; padding: 20px;"&gt;
+      &lt;mat-card-title&gt;Result&lt;/mat-card-title&gt;
+      &lt;mat-card-content&gt;
+        &lt;h3&gt;The square of {{ apiResponse()?.input }} is {{ apiResponse()?.square }}&lt;/h3&gt;
+        &lt;p&gt;Full JSON Response:&lt;/p&gt;
+        &lt;pre&gt;{{ apiResponse() | json }}&lt;/pre&gt;
+      &lt;/mat-card-content&gt;
+    &lt;/mat-card&gt;
+  }
+&lt;/div&gt;
+    </code></pre>
+
+    <h2>4. Handling CORS</h2>
+    <p>For development, the easiest way to handle CORS errors is to use Angular's proxy. Create <code>proxy.conf.json</code> in your project root, update <code>angular.json</code> to use it, and change your service to use a relative URL like <code>/api</code>. (For full details, see the previous guide version).</p>
+    <p>For production, configure your backend (e.g., a Python Flask server) to allow your frontend's domain using a library like <code>Flask-Cors</code>.</p>
+
+</body>
+</html>

@@ -1,0 +1,36 @@
+<!-- In src/app/features/api-form/api-form.component.html -->
+<div style="display: flex; justify-content: center; align-items: center; min-height: 50vh;">
+  <mat-card style="width: 400px; padding: 20px;">
+    <mat-card-title>Calculate Square</mat-card-title>
+    <mat-card-content>
+      <p>Enter a number below to calculate its square. Only numeric values are accepted.</p>
+      <form [formGroup]="form" (ngSubmit)="onSubmit()">
+        <mat-form-field appearance="fill" style="width: 100%;">
+          <mat-label>Enter a number</mat-label>
+          <input matInput formControlName="value" type="text">
+          @if (form.get('value')?.hasError('required')) {
+            <mat-error>This field is required.</mat-error>
+          }
+          @if (form.get('value')?.hasError('pattern')) {
+            <mat-error>Please enter a valid number.</mat-error>
+          }
+        </mat-form-field>
+
+        <button mat-raised-button color="primary" type="submit" [disabled]="!form.valid" style="width: 100%; margin-top: 10px;">Calculate Square</button>
+      </form>
+    </mat-card-content>
+  </mat-card>
+ </div>
+ <div>
+     @if (apiResponse()) {
+    <mat-card style="width: 400px; padding: 20px;">
+      <mat-card-title>Result</mat-card-title>
+      <mat-card-content>
+        <h3>The square of {{ apiResponse()?.input }} is {{ apiResponse()?.square }}</h3>
+        <p>Full JSON Response:</p>
+        <pre>{{ apiResponse() | json }}</pre>
+      </mat-card-content>
+    </mat-card>
+  }
+  
+ </div>

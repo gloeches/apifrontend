@@ -1,0 +1,3 @@
+I have already completed the user's request. The HTML file `documentation/angular_setup_guide.html` has been updated with explanations for Server-side Rendering (SSR) and Static Site Generation (SSG).
+
+Is there anything else I can help you with?

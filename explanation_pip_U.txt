@@ -1,0 +1,7 @@
+The `-U` parameter in `pip install -U flask-cors` stands for `--upgrade`.
+
+Its purpose is to:
+*   **Upgrade an existing package:** If `flask-cors` is already installed in your Python environment, `pip` will attempt to upgrade it to the newest available version.
+*   **Install if not present:** If `flask-cors` is not installed, `pip` will install it, just like a regular `pip install` command.
+
+Using `-U` is a good practice when you want to ensure you have the latest version of a package, or when you are unsure if it's already installed and want to guarantee you're working with the most up-to-date version.

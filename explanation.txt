@@ -1,0 +1,14 @@
+The error in `src/app/core/services/api.ts` is that the `Observable` type is missing a generic type argument. 
+
+In your `getData` method, you have:
+```typescript
+getData(value: number): Observable {
+```
+
+It should be:
+```typescript
+getData(value: number): Observable<any> {
+```
+Or, if you know the shape of the data returned by the API, you can create an interface for it and use that instead of `any`.
+
+The `Observable` type from RxJS is a generic type, meaning it needs to know what kind of values it will be emitting. By specifying `Observable<any>`, you are telling TypeScript that the observable can emit values of any type.
