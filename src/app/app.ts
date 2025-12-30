@@ -1,10 +1,10 @@
 import { Component, signal } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
-import { ApiForm } from './features/api-form/api-form';
+import {  ApiFormComponent } from './features/api-form/api-form';
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet, ApiForm],
+  imports: [RouterOutlet, ApiFormComponent, ApiFormComponent],
   templateUrl: './app.html',
   styleUrl: './app.scss'
 })

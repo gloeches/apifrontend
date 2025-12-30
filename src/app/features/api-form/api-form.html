@@ -1,5 +1,4 @@
-<!-- In src/app/features/api-form/api-form.component.html -->
-<div style="display: flex; justify-content: center; align-items: center; min-height: 50vh;">
+<div style="display: flex; justify-content: center; align-items: center; min-height: 50vh; flex-direction: column; gap: 20px;">
   <mat-card style="width: 400px; padding: 20px;">
     <mat-card-title>Calculate Square</mat-card-title>
     <mat-card-content>
@@ -16,13 +15,23 @@
           }
         </mat-form-field>
 
-        <button mat-raised-button color="primary" type="submit" [disabled]="!form.valid" style="width: 100%; margin-top: 10px;">Calculate Square</button>
+        <div style="position: relative; width: 100%; margin-top: 10px;">
+          <button mat-raised-button color="primary" type="submit" [disabled]="!form.valid || isLoading()" style="width: 100%;">
+            @if (isLoading()) {
+              <span>Calculating...</span>
+            } @else {
+              <span>Calculate Square</span>
+            }
+          </button>
+          @if (isLoading()) {
+            <mat-spinner [diameter]="60" style="position: absolute; right: 10px; top: 5px;"></mat-spinner>
+          }
+        </div>
       </form>
     </mat-card-content>
   </mat-card>
- </div>
- <div>
-     @if (apiResponse()) {
+
+  @if (apiResponse()) {
     <mat-card style="width: 400px; padding: 20px;">
       <mat-card-title>Result</mat-card-title>
       <mat-card-content>
@@ -32,5 +41,5 @@
       </mat-card-content>
     </mat-card>
   }
-  
- </div>
+</div>
+    
