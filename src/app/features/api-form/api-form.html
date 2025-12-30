@@ -23,23 +23,28 @@
               <span>Calculate Square</span>
             }
           </button>
-          @if (isLoading()) {
-            <mat-spinner [diameter]="60" style="position: absolute; right: 10px; top: 5px;"></mat-spinner>
-          }
+         
         </div>
       </form>
     </mat-card-content>
   </mat-card>
 
-  @if (apiResponse()) {
-    <mat-card style="width: 400px; padding: 20px;">
-      <mat-card-title>Result</mat-card-title>
-      <mat-card-content>
-        <h3>The square of {{ apiResponse()?.input }} is {{ apiResponse()?.square }}</h3>
-        <p>Full JSON Response:</p>
-        <pre>{{ apiResponse() | json }}</pre>
-      </mat-card-content>
-    </mat-card>
-  }
+
+
+  <!-- Result Card -->
+  <mat-card style="width: 400px; min-height: 150px; padding: 20px;">
+    <mat-card-title>Result</mat-card-title>
+    <mat-card-content style="display: flex; justify-content: center; align-items: center; height: 100%;">
+      @if (isLoading()) {
+        <mat-spinner [diameter]="50"></mat-spinner>
+      } @else if (apiResponse()) {
+        <div style="text-align: left; width: 100%;">
+          <h3>{{ apiResponse()?.description }}</h3>
+          <p>Value: <strong>{{ apiResponse()?.value }}</strong></p>
+        </div>
+      } @else {
+        <p style="color: #777;">The API result will be displayed here.</p>
+      }
+    </mat-card-content>
+  </mat-card>
 </div>
-    
