@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Angular 21 Environment Setup Guide</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 900px;
+            margin: 20px auto;
+            padding: 0 20px;
+            background-color: #f9f9f9;
+        }
+        h1, h2, h3 {
+            color: #0056b3;
+        }
+        pre {
+            background-color: #eef;
+            border: 1px solid #ddd;
+            padding: 10px;
+            overflow-x: auto;
+            border-radius: 5px;
+        }
+        code {
+            font-family: "Courier New", Courier, monospace;
+            color: #d14;
+        }
+        .highlight {
+            background-color: #fff3cd;
+            padding: 2px 4px;
+            border-radius: 3px;
+        }
+        .note {
+            background-color: #e6f7ff;
+            border-left: 5px solid #91d5ff;
+            padding: 10px 15px;
+            margin: 15px 0;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Angular 21 Environment Setup Guide</h1>
+    <p>This guide provides instructions on how to set up and manage different environments (e.g., development, staging, production) in an Angular application, specifically targeting Angular version 21 and above. Managing environments allows you to use different configurations (API endpoints, keys, etc.) for various deployment targets.</p>
+
+    <div class="note">
+        <strong>Note:</strong> Angular versions 15+ have streamlined the environment setup. Older versions might require slightly different approaches, particularly with <code>angular.json</code> configurations.
+    </div>
+
+    <h2>1. Understanding Angular Environments</h2>
+    <p>Angular CLI projects typically come with default environment files:</p>
+    <ul>
+        <li><code>src/environments/environment.ts</code>: The default development environment.</li>
+        <li><code>src/environments/environment.prod.ts</code>: The production environment.</li>
+    </ul>
+    <p>These files export a simple object containing configuration variables. For example:</p>
+    <pre><code>// src/environments/environment.ts
+export const environment = {
+  production: false,
+  apiUrl: 'http://localhost:3000/api',
+  someKey: 'dev_key_123'
+};
+
+// src/environments/environment.prod.ts
+export const environment = {
+  production: true,
+  apiUrl: 'https://api.yourdomain.com/api',
+  someKey: 'prod_key_456'
+};
+</code></pre>
+    <p>In your application code, you import and use these variables like this:</p>
+    <pre><code>import { environment } from '../environments/environment';
+
+// ...
+console.log('Production mode:', environment.production);
+console.log('API URL:', environment.apiUrl);
+</code></pre>
+
+    <h2>2. Configuring <code>angular.json</code> for New Environments</h2>
+    <p>The <code>angular.json</code> file is where you tell the Angular CLI how to build your application for different targets. By default, it has configurations for <code>development</code> and <code>production</code>.</p>
+
+    <h3>2.1. Adding a Staging Environment</h3>
+    <p>Let's add a <code>staging</code> environment. First, create a new environment file:</p>
+    <pre><code>// src/environments/environment.staging.ts
+export const environment = {
+  production: false, // Or true, depending on how you treat staging
+  apiUrl: 'https://staging.yourdomain.com/api',
+  someKey: 'staging_key_789'
+};
+</code></pre>
+
+    <p>Next, modify your <code>angular.json</code>. Locate the <code>"architect"</code> section under your project's configuration (e.g., <code>"projects" -> "your-app-name" -> "architect"</code>). You'll typically find <code>"build"</code> and <code>"serve"</code> configurations.</p>
+
+    <p>Under <code>"build" -> "configurations"</code>, add a new entry for <code>"staging"</code>:</p>
+    <pre><code>{
+  // ...
+  "architect": {
+    "build": {
+      "builder": "@angular-devkit/build-angular:browser",
+      "options": {
+        // ... common build options
+      },
+      "configurations": {
+        "production": {
+          // ... production specific options
+        },
+        "development": {
+          // ... development specific options
+        },
+        <span class="highlight">"staging": {
+          "fileReplacements": [
+            {
+              "replace": "src/environments/environment.ts",
+              "with": "src/environments/environment.staging.ts"
+            }
+          ],
+          "optimization": true,
+          "outputHashing": "all",
+          "sourceMap": false,
+          "namedChunks": false,
+          "extractLicenses": true,
+          "vendorChunk": false,
+          "buildOptimizer": true,
+          "budgets": [
+            {
+              "type": "initial",
+              "maximumWarning": "500kb",
+              "maximumError": "1mb"
+            },
+            {
+              "type": "anyComponentStyle",
+              "maximumWarning": "2kb",
+              "maximumError": "4kb"
+            }
+          ]
+        }</span>
+      }
+    },
+    "serve": {
+      "builder": "@angular-devkit/build-angular:dev-server",
+      "configurations": {
+        "production": {
+          "browserTarget": "your-app-name:build:production"
+        },
+        "development": {
+          "browserTarget": "your-app-name:build:development"
+        },
+        <span class="highlight">"staging": {
+          "browserTarget": "your-app-name:build:staging"
+        }</span>
+      }
+    },
+    // ... other architect targets
+  }
+  // ...
+}
+</code></pre>
+    <p>Key points for the <code>"staging"</code> configuration:</p>
+    <ul>
+        <li><code>"fileReplacements"</code>: This is crucial. It tells Angular to replace the default <code>environment.ts</code> with <code>environment.staging.ts</code> during the build process for this configuration.</li>
+        <li>You can copy many settings from the <code>"production"</code> configuration for <code>"staging"</code> if you want a similar optimized build, or adjust them as needed (e.g., <code>"sourceMap": true</code> for easier debugging on staging).</li>
+    </ul>
+
+    <h2>3. Building and Serving with Specific Environments</h2>
+
+    <h3>3.1. Building Your Application</h3>
+    <p>To build your application for a specific environment, use the <code>--configuration</code> (or <code>-c</code>) flag:</p>
+    <pre><code># Build for development (default)
+ng build
+
+# Build for production
+ng build --configuration=production
+# Or shorthand:
+ng build -c production
+
+# Build for staging
+ng build --configuration=staging
+# Or shorthand:
+ng build -c staging
+</code></pre>
+
+    <h3>3.2. Serving Your Application</h3>
+    <p>Similarly, to serve your application using a specific environment's configuration:</p>
+    <pre><code># Serve for development (default)
+ng serve
+
+# Serve for production (using build:production config for serve)
+ng serve --configuration=production
+
+# Serve for staging
+ng serve --configuration=staging
+</code></pre>
+
+    <h2>4. Advanced: Multiple Environments for the Same Build Type</h2>
+    <p>Sometimes you might need more granular control, e.g., different production-like environments (<code>prod-eu</code>, <code>prod-us</code>). You can extend the configurations further:</p>
+    <ol>
+        <li>Create new environment files: <code>src/environments/environment.prod-eu.ts</code>, <code>src/environments/environment.prod-us.ts</code>.</li>
+        <li>Add corresponding configurations under <code>"architect" -> "build" -> "configurations"</code> in <code>angular.json</code>, each with its own <code>"fileReplacements"</code> pointing to the correct file.</li>
+        <li>Use <code>ng build -c prod-eu</code> or <code>ng build -c prod-us</code>.</li>
+    </ol>
+
+    <h2>5. Using Environment Variables in CI/CD</h2>
+    <p>For sensitive information (like API keys) that shouldn't be committed to version control, you can use environment variables provided by your CI/CD pipeline. While Angular's environment files are great for static configuration, dynamic values from CI/CD require a slightly different approach:</p>
+    <ol>
+        <li><strong>Placeholder in environment file:</strong> Use a placeholder in your <code>environment.ts</code> or a specific environment file.
+<pre><code>// src/environments/environment.ts
+export const environment = {
+  production: false,
+  apiUrl: 'http://localhost:3000/api',
+  externalApiKey: 'REPLACE_EXTERNAL_API_KEY'
+};
+</code></pre>
+        </li>
+        <li><strong>Script to replace placeholder:</strong> In your CI/CD pipeline, before the <code>ng build</code> step, run a script (e.g., Node.js or shell script) to replace the placeholder with the actual environment variable.
+<pre><code># Example shell script (e.g., in a build script or CI/CD step)
+#!/bin/bash
+ENV_FILE="./src/environments/environment.prod.ts"
+# Ensure the file exists and contains the placeholder
+if grep -q "REPLACE_EXTERNAL_API_KEY" $ENV_FILE; then
+  sed -i "s|REPLACE_EXTERNAL_API_KEY|$EXTERNAL_API_KEY|" $ENV_FILE
+  echo "Replaced external API key in $ENV_FILE"
+else
+  echo "Placeholder for external API key not found in $ENV_FILE"
+  exit 1
+fi
+
+# Then proceed with build
+ng build --configuration=production
+</code></pre>
+        <p>Ensure that <code>$EXTERNAL_API_KEY</code> is an environment variable set in your CI/CD system.</p>
+        </li>
+    </ol>
+
+    <h2>Advanced Patterns and Alternatives</h2>
+    <p>While the <code>fileReplacements</code> method is the standard, build-time approach, there are other patterns for consuming and providing environment variables that can make your application more robust and testable.</p>
+
+    <h3>1. Using <code>InjectionToken</code> for Type-Safe Configuration</h3>
+    <p>This pattern uses Angular's Dependency Injection (DI) system to provide your environment configuration. It decouples your components and services from the concrete <code>environment.ts</code> files, making them easier to test and more modular.</p>
+
+    <h4>Step 1: Define an Interface and an Injection Token</h4>
+    <p>Create a file like <code>src/app/core/env.token.ts</code> to define the shape of your environment object and create a token.</p>
+    <pre><code>// src/app/core/env.token.ts
+import { InjectionToken } from '@angular/core';
+
+export interface AppEnvironment {
+  production: boolean;
+  apiUrl: string;
+  someKey: string;
+}
+
+export const ENV = new InjectionToken&lt;AppEnvironment&gt;('app.environment');
+</code></pre>
+
+    <h4>Step 2: Provide the Environment in <code>app.config.ts</code></h4>
+    <p>In your main application configuration (<code>app.config.ts</code> for standalone apps), provide the value for the token using the actual environment object.</p>
+    <pre><code>// src/app/app.config.ts
+import { ApplicationConfig } from '@angular/core';
+import { provideRouter } from '@angular/router';
+
+import { routes } from './app.routes';
+import { ENV } from './core/env.token';
+import { environment } from '../environments/environment';
+
+export const appConfig: ApplicationConfig = {
+  providers: [
+    provideRouter(routes),
+    // Provide the environment configuration using the token
+    { provide: ENV, useValue: environment }
+  ]
+};
+</code></pre>
+
+    <h4>Step 3: Inject the Configuration</h4>
+    <p>Now, any service or component can get the configuration by injecting the token, rather than importing the file directly.</p>
+    <pre><code>// src/app/core/services/api.service.ts
+import { Injectable, inject } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { ENV, AppEnvironment } from '../core/env.token';
+
+@Injectable({ providedIn: 'root' })
+export class ApiService {
+  private http = inject(HttpClient);
+  // Inject the environment object
+  private env = inject&lt;AppEnvironment&gt;(ENV);
+
+  getSomeData() {
+    const apiUrl = this.env.apiUrl;
+    console.log(`Fetching data from: ${apiUrl}`);
+    return this.http.get(`${apiUrl}/data`);
+  }
+}
+</code></pre>
+
+    <div class="note">
+        <strong>Advantages of this pattern:</strong><br>
+        - <strong>Decoupling:</strong> Your code isn't tightly coupled to a specific file path (<code>'../environments/environment'</code>).<br>
+        - <strong>Testability:</strong> During testing, you can easily provide a mock environment object for the <code>ENV</code> token, making your unit tests cleaner and more reliable.
+    </div>
+
+    <h3>2. Runtime Environments (Less Common)</h3>
+    <p>This advanced approach loads configuration when the application starts, not at build time. It's useful for scenarios like deploying the same build artifact (e.g., a Docker image) to multiple environments where only the configuration changes.</p>
+    <div class="note" style="border-left-color: #ffc107;">
+        <strong>Warning:</strong> This method has significant trade-offs, including a performance hit on startup, and should be used only when necessary.
+    </div>
+
+    <h4>How It Works</h4>
+    <ol>
+        <li>Place a <code>config.json</code> file in your <code>public/</code> or <code>src/assets/</code> directory.
+<pre><code>// public/config.json
+{
+  "apiUrl": "https://runtime-api.yourdomain.com/api",
+  "someKey": "runtime_key_abc"
+}
+</code></pre>
+        </li>
+        <li>Create a service to hold the configuration.
+<pre><code>// src/app/core/services/runtime-config.service.ts
+import { Injectable } from '@angular/core';
+
+@Injectable({ providedIn: 'root' })
+export class RuntimeConfigService {
+  config: any = null;
+}
+</code></pre>
+        </li>
+        <li>Use an <code>APP_INITIALIZER</code> to fetch this file before the app renders.
+<pre><code>// src/app/app.config.ts
+import { APP_INITIALIZER, ApplicationConfig } from '@angular/core';
+import { HttpClient, provideHttpClient } from '@angular/common/http';
+import { lastValueFrom } from 'rxjs';
+import { RuntimeConfigService } from './core/services/runtime-config.service';
+
+// Factory function to load the config
+export function initializeApp(configService: RuntimeConfigService, http: HttpClient) {
+  return () => lastValueFrom(http.get('/config.json')).then(config => {
+    configService.config = config;
+  });
+}
+
+export const appConfig: ApplicationConfig = {
+  providers: [
+    provideHttpClient(), // Needed for the initializer
+    {
+      provide: APP_INITIALIZER,
+      useFactory: (cs: RuntimeConfigService, http: HttpClient) => initializeApp(cs, http),
+      deps: [RuntimeConfigService, HttpClient],
+      multi: true
+    },
+    // ...other providers
+  ]
+};
+</code></pre>
+        </li>
+    </ol>
+    <p><strong>Downsides:</strong> The application's startup is delayed by an HTTP request, and environment-specific code cannot be tree-shaken from the final bundle because the configuration is unknown at build time.</p>
+
+    <h3>Deep Dive: How the APP_INITIALIZER Pattern Works</h3>
+    <p>The <code>APP_INITIALIZER</code> token is a powerful feature in Angular that allows you to execute code when the application is initializing. The application's startup will be delayed until the function provided to the token has completed (specifically, until its returned Promise resolves).</p>
+    <h4>A Deeper Look at the Factory Provider</h4>
+    <p>The term "factory" can seem complex, but it's a core concept in Dependency Injection. Let's break down the provider piece by piece to understand exactly how it works.</p>
+    <pre><code>// In app.config.ts
+{
+  provide: APP_INITIALIZER,
+  useFactory: (cs: RuntimeConfigService, http: HttpClient) => initializeApp(cs, http),
+  deps: [RuntimeConfigService, HttpClient],
+  multi: true
+}
+</code></pre>
+    <p>In Angular, a provider is an instruction that tells the injector how to create an instance of a dependency. While <code>useClass</code> or <code>useValue</code> are common, <code>useFactory</code> gives you full control by telling the injector: "execute this function to get the value."</p>
+    <ul>
+        <li><code>provide: APP_INITIALIZER</code>: This specifies the token we are providing a value for. We're hooking into Angular's initialization process.</li>
+        <li>
+            <code>deps: [RuntimeConfigService, HttpClient]</code>: This is the <strong>"shopping list"</strong> for our factory. Before the factory function can run, Angular's injector needs to prepare the dependencies. This array tells the injector: "I need an instance of <code>RuntimeConfigService</code> and an instance of <code>HttpClient</code>." The injector finds or creates them.
+        </li>
+        <li>
+            <code>useFactory: (cs: RuntimeConfigService, http: HttpClient) => initializeApp(cs, http)</code>: This is the factory itself. It's an arrow function that Angular executes.
+            <ul>
+                <li>The arguments of this function (<code>cs</code>, <code>http</code>) are populated by the injector with the services listed in the <code>deps</code> array, in the exact same order. So, <code>cs</code> becomes the instance of <code>RuntimeConfigService</code>, and <code>http</code> becomes the instance of <code>HttpClient</code>.</li>
+                <li>The body of the function calls <em>another</em> function, <code>initializeApp(cs, http)</code>, and passes the injected services along to it.</li>
+            </ul>
+        </li>
+        <li><code>multi: true</code>: This tells Angular not to overwrite other <code>APP_INITIALIZER</code> providers but to add this one to an array of initializers. This makes the system extensible.</li>
+    </ul>
+
+    <h4>The Two-Layer Function: Factory vs. Initializer</h4>
+    <p>This is the most critical part to understand. We are dealing with a function that returns another function.</p>
+    <p><strong>1. The Outer Function (The Factory):</strong></p>
+    <p>The function specified in <code>useFactory</code> is the outer layer. Its only job is to get dependencies from Angular's DI system and use them to create the *real* initializer function.</p>
+    <pre><code>// This is the factory function definition.
+// Its arguments (configService, http) are supplied by the `deps` array.
+export function initializeApp(configService: RuntimeConfigService, http: HttpClient) {
+  
+  // It RETURNS the actual initializer function.
+  return () => lastValueFrom(http.get('/config.json')).then(config => {
+      configService.config = config;
+  });
+}</code></pre>
+
+    <p><strong>2. The Inner Function (The Initializer):</strong></p>
+    <p>The function that is `return`ed from `initializeApp` is the one that Angular actually executes and waits for during startup. Because it was created inside `initializeApp`, it has access to the <code>http</code> and <code>configService</code> variables from its parent scope (this is a concept called a "closure").</p>
+
+    <p>So, the flow is:</p>
+    <ol>
+        <li>Angular sees the <code>APP_INITIALIZER</code> provider.</li>
+        <li>It consults the <code>deps</code> array and gathers the necessary services (<code>RuntimeConfigService</code>, <code>HttpClient</code>).</li>
+        <li>It calls the <code>useFactory</code> function, passing the gathered services as arguments.</li>
+        <li>The factory calls and returns the result of <code>initializeApp</code>, which is the inner initializer function.</li>
+        <li>Angular takes this returned inner function, executes it, and waits for its returned Promise to resolve before continuing to bootstrap the application.</li>
+    </ol>
+
+    <p>This pattern may seem verbose, but it cleanly separates the concern of "getting dependencies" from the concern of "performing the initialization logic."</p>
+
+    <p>The <code>initializeApp</code> factory returns the actual function that Angular will execute and wait for:</p>
+    <pre><code>// The returned function is what Angular executes.
+return () => lastValueFrom(http.get('/config.json')).then(config => {
+    configService.config = config;
+});
+</code></pre>
+    <p>This function does two key things:</p>
+    <ol>
+        <li>It uses <code>HttpClient</code> to send a GET request to fetch the <code>/config.json</code> file.</li>
+        <li>It uses <code>lastValueFrom</code> to convert the RxJS Observable from the HTTP call into a Promise. <code>APP_INITIALIZER</code> needs a Promise to know when the task is complete.</li>
+        <li>Once the Promise resolves (i.e., the file is downloaded), its <code>.then()</code> block is executed. Inside, we take the fetched <code>config</code> object and store it in our singleton <code>RuntimeConfigService</code>.</li>
+    </ol>
+    <p>Because the app's startup is blocked until this completes, you can be sure that by the time your components and other services are created, the <code>RuntimeConfigService</code> will have the configuration data ready.</p>
+
+    <h4>Example: Accessing Runtime Configuration in a Component</h4>
+    <p>Once the initializer has run, you can inject the <code>RuntimeConfigService</code> anywhere in your application to access the configuration variables. The service acts as the single source of truth for your runtime settings.</p>
+
+    <pre><code>// src/app/features/some-feature/some-feature.component.ts
+import { Component, OnInit, inject } from '@angular/core';
+import { RuntimeConfigService } from '../../core/services/runtime-config.service';
+
+@Component({
+  selector: 'app-some-feature',
+  template: `&lt;p&gt;Configuration loaded! Check the console.&lt;/p&gt;`,
+  standalone: true,
+})
+export class SomeFeatureComponent implements OnInit {
+  private configService = inject(RuntimeConfigService);
+
+  ngOnInit(): void {
+    // The config will be available here because APP_INITIALIZER finished before this component was rendered.
+    if (this.configService.config) {
+      console.log('Runtime API URL from config.json:', this.configService.config.apiUrl);
+      console.log('Runtime Key from config.json:', this.configService.config.someKey);
+    } else {
+      console.error('Configuration could not be loaded!');
+    }
+  }
+}
+</code></pre>
+    <div class="note">
+        <strong>Important:</strong> A key use case for this pattern is with Docker. You can build one Angular Docker image. Then, when you run the container, you can use a Docker volume to mount a different <code>config.json</code> file into the container's web server directory for each environment (dev, staging, prod). This allows the exact same application code to connect to different backend APIs without being rebuilt.
+    </div>
+
+
+    <h2>Conclusion</h2>
+    <p>By following these steps, you can effectively manage different configurations for your Angular 21 project across various environments, ensuring your application behaves correctly whether in development, staging, or production.</p>
+
+    <div class="note" style="background-color: #d4edda; border-left-color: #28a745;">
+        <strong>Final Recommendation:</strong><br>
+        For most projects, the standard <strong>build-time <code>fileReplacements</code> approach is the best practice</strong>. It produces smaller, more secure, and more performant production builds.<br><br>
+        To make your application code cleaner and more testable, combine the build-time approach with the <strong><code>InjectionToken</code> pattern</strong> for consuming the environment variables.
+    </div>
+</body>
+</html>

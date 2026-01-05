@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Angular API Front-End Tutorial</title>
+    <style>
+        body { font-family: sans-serif; line-height: 1.6; padding: 20px; }
+        h1, h2, h3, h4 { color: #333; }
+        code { background-color: #f4f4f4; padding: 2px 4px; border-radius: 4px; }
+        pre { background-color: #f4f4f4; padding: 10px; border-radius: 4px; }
+    </style>
+</head>
+<body>
+
+    <h1>Angular API Front-End Tutorial</h1>
+
+    <h2>Introduction</h2>
+    <p>This tutorial will guide you through the process of creating a simple Angular application that interacts with a back-end API. We will build a form where a user can input a number, send it to an API, and see the result displayed. This project uses modern Angular features, including standalone components, signals, and reactive forms.</p>
+
+    <h2>Prerequisites</h2>
+    <ul>
+        <li>Node.js and npm (or yarn) installed.</li>
+        <li>Angular CLI installed globally: <code>npm install -g @angular/cli</code></li>
+    </ul>
+
+    <h2>Project Setup</h2>
+    <p>First, we create a new Angular workspace:</p>
+    <pre><code>ng new ApiFrontEnd --routing --style=scss</code></pre>
+    <p>This command creates a new Angular project with routing and SCSS for styling.</p>
+    <p>Next, we need to add Angular Material for UI components:</p>
+    <pre><code>ng add @angular/material</code></pre>
+
+    <h2>Project Structure</h2>
+    <p>A well-organized project structure is crucial for maintainability. Here is the structure of our project, with an explanation of each important file:</p>
+    <pre><code>
+D:\Angular\ApiFrontEnd\
+├───.editorconfig
+├───.gitignore
+├───angular.json              # Angular project configuration
+├───package.json              # Project dependencies and scripts
+├───README.md
+├───tsconfig.app.json
+├───tsconfig.json
+├───tsconfig.spec.json
+├───src\
+│   ├───index.html            # The main HTML file
+│   ├───main.ts               # The main entry point of the application
+│   ├───styles.scss           # Global styles
+│   └───app\
+│       ├───app.config.ts     # Application configuration, including providers
+│       ├───app.routes.ts     # Application routes
+│       ├───app.html
+│       ├───app.scss
+│       ├───app.ts
+│       ├───core\
+│       │   ├───models\
+│       │   │   └───api-response.ts  # Interface for the API response
+│       │   └───services\
+│       │       └───api.ts         # Service for API communication
+│       └───features\
+│           └───api-form\
+│               ├───api-form.html    # HTML template for the form component
+│               ├───api-form.scss    # Styles for the form component
+│               └───api-form.ts      # Logic for the form component
+    </code></pre>
+    <ul>
+        <li><code>angular.json</code>: This file contains the configuration for your Angular project, including build settings, serve configurations, and more.</li>
+        <li><code>package.json</code>: This file lists all the project dependencies (like Angular, RxJS, etc.) and defines scripts for running, building, and testing the application.</li>
+        <li><code>src/main.ts</code>: This is the main entry point for your application. It bootstraps the main `AppComponent`.</li>
+        <li><code>src/app/app.config.ts</code>: In a standalone application, this file is used to configure the application-level providers, such as the router and `HttpClient`.</li>
+        <li><code>src/app/app.routes.ts</code>: This file defines the routes for your application.</li>
+        <li><code>src/app/core</code>: This directory contains the core logic of your application, such as services and models.</li>
+        <li><code>src/app/features</code>: This directory contains the different feature modules of your application. In our case, we have the `api-form` feature.</li>
+    </ul>
+
+    <h2>Creating the API Service</h2>
+    <p>First, we create a service to handle communication with our back-end API. We can generate a new service using the Angular CLI:</p>
+    <pre><code>ng generate service core/services/api --skip-tests</code></pre>
+    <p>This command creates a new service file at <code>src/app/core/services/api.ts</code>.</p>
+    <p>Here is the code for the service:</p>
+    <pre><code>
+import { Injectable } from '@angular/core';
+import { HttpClient, HttpParams } from '@angular/common/http';
+import { Observable } from 'rxjs';
+
+@Injectable({
+  providedIn: 'root',
+})
+export class Api {
+  private apiUrl = 'http://192.168.0.148:2000/api';
+
+  constructor(private http: HttpClient) { } 
+
+  getData(value: number): Observable<any> {
+    const params = new HttpParams().set('value', value.toString());
+    return this.http.get(this.apiUrl, { params });
+  }
+}
+    </code></pre>
+    <h4>A Deeper Look at the API Service and Observables</h4>
+    <ul>
+        <li><code>@Injectable({ providedIn: 'root' })</code>: This decorator marks the class as a service that can be injected. By providing it in the 'root', Angular creates a single, shared instance of this service for the entire application. This is ideal for managing state and reusable logic.</li>
+        <li><code>HttpClient</code>: This is Angular's built-in service for making HTTP requests. We inject it into our service's constructor to get access to its methods (like <code>get</code>, <code>post</code>, etc.).</li>
+        <li><code>getData(value: number): Observable<any></code>: This is the core method of our service.
+            <ul>
+                <li><strong>What is an Observable?</strong> An <code>Observable</code> is a key concept from a library called RxJS (Reactive Extensions for JavaScript), which is integrated into Angular. Think of an <code>Observable</code> not as the data itself, but as a "stream" of data that can arrive over time. For an HTTP request, this stream will typically emit only one value (the HTTP response) and then complete. However, Observables can also be used for streams of multiple values, like user clicks, websocket messages, or timers.</li>
+                <li><strong>Why use an Observable?</strong> The <code>HttpClient</code> returns an <code>Observable</code> because HTTP requests are asynchronous. The application doesn't freeze and wait for the response. Instead, it "subscribes" to the Observable and provides a callback function to be executed when the data arrives. This is a powerful and efficient way to handle asynchronous operations.</li>
+                <li><strong>"Cold" Observables:</strong> The <code>Observable</code> returned by <code>http.get()</code> is "cold". This means the HTTP request is **not** actually sent until something subscribes to it. In our case, the request is only made when we call <code>.subscribe()</code> in our component.</li>
+            </ul>
+        </li>
+    </ul>
+
+    <h2>Creating the API Form Component</h2>
+    <p>Next, we'll create the component that contains our form. We can generate a new component using the Angular CLI:</p>
+    <pre><code>ng generate component features/api-form --standalone --skip-tests</code></pre>
+    <p>This command creates a new standalone component at <code>src/app/features/api-form/</code>.</p>
+    
+    <h3>The Component's TypeScript File (`api-form.ts`)</h3>
+    <p>This file contains the logic for our component.</p>
+    <pre><code>
+import { Component, inject, signal } from '@angular/core';
+import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { finalize } from 'rxjs';
+
+// Material Module Imports
+import { MatButtonModule } from '@angular/material/button';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
+import { MatCardModule } from '@angular/material/card';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { CommonModule } from '@angular/common';
+
+import { Api } from '../../core/services/api';
+import { ApiResponse } from '../../core/models/api-response';
+
+@Component({
+  selector: 'app-api-form',
+  standalone: true,
+  imports: [
+    CommonModule,
+    ReactiveFormsModule,
+    MatFormFieldModule,
+    MatInputModule,
+    MatButtonModule,
+    MatCardModule,
+    MatProgressSpinnerModule
+  ],
+  templateUrl: './api-form.html',
+  styleUrl: './api-form.scss',
+})
+export class ApiFormComponent {
+  private fb = inject(FormBuilder);
+  private apiService = inject(Api);
+
+  public isLoading = signal(false);
+  public apiResponse = signal<ApiResponse | undefined>(undefined);
+  public error = signal<string | undefined>(undefined);
+
+  form = this.fb.group({
+    value: ['', [Validators.required, Validators.pattern('^[0-9]*$')]]
+  });
+
+  onSubmit() {
+    if (this.form.invalid) {
+      return;
+    }
+    this.isLoading.set(true);
+    this.apiResponse.set(undefined); // Clear previous results
+    this.error.set(undefined); // Clear previous errors
+    
+    const value = parseInt(this.form.value.value!, 10);
+    this.apiService.getData(value).pipe(
+      finalize(() => this.isLoading.set(false))
+    ).subscribe({
+      next: (response) => {
+        this.apiResponse.set(response);
+      },
+      error: (err) => {
+        this.error.set('An error occurred while fetching data.');
+        console.error('API Error::', err);
+      }
+    });
+  }
+}
+    </code></pre>
+    <h4>A Deeper Look at the Component's Logic</h4>
+    <ul>
+        <li><code>@Component({...})</code>: This decorator defines the component's metadata, including its selector, template, styles, and imports.</li>
+        <li><code>standalone: true</code>: This marks the component as a standalone component, which means it doesn't need to be declared in an `NgModule`.</li>
+        <li><code>inject(FormBuilder)</code>: We use the `inject` function to get an instance of the `FormBuilder` service, which helps us create reactive forms.</li>
+        <li><code>signal(...)</code>: We use signals to manage the component's state. `isLoading` is a boolean signal that tracks the loading state, `apiResponse` holds the response from the API, and `error` holds any error messages. Signals are a new feature in Angular that provide a more efficient and fine-grained way to manage state changes and update the view.</li>
+        <li><code>this.fb.group({...})</code>: We use the `FormBuilder` to create a new `FormGroup` with a single control, `value`. We also add validators to ensure the input is required and is a number.</li>
+        <li><code>onSubmit()</code>: This method is called when the form is submitted. It sets the loading state, calls the `apiService.getData()` method, and then updates the `apiResponse` or `error` signal based on the result.
+            <ul>
+                <li><strong>The RxJS `pipe()` Method:</strong> The <code>pipe()</code> method is a feature of RxJS Observables that allows you to chain together "operators" to process the data in the stream. An operator is a function that takes an Observable as input and returns a new Observable. In our case, we are using the <code>finalize</code> operator.</li>
+                <li><strong>The `finalize` Operator:</strong> The <code>finalize</code> operator is a powerful tool for side effects. It takes a callback function that will be executed when the Observable completes (either by successfully emitting a value or by erroring out). We use it here to guarantee that <code>this.isLoading.set(false)</code> is always called, ensuring our loading spinner doesn't get stuck on the screen if the API call fails.</li>
+            </ul>
+        </li>
+        <li>
+            <strong>The `subscribe()` Method:</strong> This is where we actually "listen" to the Observable stream. We pass an object with two methods:
+            <ul>
+                <li><code>next: (response) => {...}</code>: This function is called when the Observable successfully emits a value (i.e., the HTTP request was successful). We take the response and update our `apiResponse` signal.</li>
+                <li><code>error: (err) => {...}</code>: This function is called if the Observable emits an error (i.e., the HTTP request failed). We set our `error` signal with a user-friendly message and log the actual error to the console for debugging.</li>
+            </ul>
+        </li>
+    </ul>
+
+    <h3>The Component's Template (`api-form.html`)</h3>
+    <p>This file contains the HTML for our component.</p>
+    <pre><code>
+&lt;div class="container"&gt;
+  &lt;mat-card&gt;
+    &lt;mat-card-title&gt;Calculate Square&lt;/mat-card-title&gt;
+    &lt;mat-card-content&gt;
+      &lt;p&gt;Enter a number below to calculate its square. Only numeric values are accepted.&lt;/p&gt;
+      &lt;form [formGroup]="form" (ngSubmit)="onSubmit()"&gt;
+        &lt;mat-form-field appearance="fill"&gt;
+          &lt;mat-label&gt;Enter a number&lt;/mat-label&gt;
+          &lt;input matInput formControlName="value" type="text"&gt;
+          &#64;if (form.get('value')?.hasError('required')) {
+            &lt;mat-error&gt;This field is required.&lt;/mat-error&gt;
+          }
+          &#64;if (form.get('value')?.hasError('pattern')) {
+            &lt;mat-error&gt;Please enter a valid number.&lt;/mat-error&gt;
+          }
+        &lt;/mat-form-field&gt;
+
+        &lt;div class="button-container"&gt;
+          &lt;button mat-raised-button color="primary" type="submit" [disabled]="!form.valid || isLoading()"&gt;
+            &#64;if (isLoading()) {
+              &lt;span&gt;Calculating...&lt;/span&gt;
+            } &#64;else {
+              &lt;span&gt;Calculate Square&lt;/span&gt;
+            }
+          &lt;/button&gt;
+         
+        &lt;/div&gt;
+      &lt;/form&gt;
+    &lt;/mat-card-content&gt;
+  &lt;/mat-card&gt;
+
+
+
+  &lt;!-- Result Card --&gt;
+  &lt;mat-card&gt;
+    &lt;mat-card-title&gt;Result&lt;/mat-card-title&gt;
+    &lt;mat-card-content class="result-content"&gt;
+      &#64;if (isLoading()) {
+        &lt;mat-spinner [diameter]="50"&gt;&lt;/mat-spinner&gt;
+      } &#64;else if (apiResponse()) {
+        &lt;div class="result-text"&gt;
+          &lt;h3&gt;{{ apiResponse()?.description }}&lt;/h3&gt;
+          &lt;p&gt;Value: &lt;strong&gt;{{ apiResponse()?.value }}&lt;/strong&gt;&lt;/p&gt;
+        &lt;/div&gt;
+      } &#64;else if (error()) {
+        &lt;div class="error-text"&gt;
+          &lt;p&gt;{{ error() }}&lt;/p&gt;
+        &lt;/div&gt;
+      } &#64;else {
+        &lt;p class="placeholder-text"&gt;The API result will be displayed here.&lt;/p&gt;
+      }
+    &lt;/mat-card-content&gt;
+  &lt;/mat-card&gt;
+&lt;/div&gt;
+    </code></pre>
+    <h4>A Deeper Look at the Template and Error Handling</h4>
+    <ul>
+        <li><code>[formGroup]="form"</code>: This directive binds our form to the `form` `FormGroup` in the component's class.</li>
+        <li><code>(ngSubmit)="onSubmit()"</code>: This event binding calls the `onSubmit()` method when the form is submitted.</li>
+        <li>
+            <strong>Conditional Rendering with <code>@if</code>, <code>@else if</code>, and <code>@else</code>:</strong> This is Angular's new built-in control flow syntax. It's used here to create a clear and readable state machine for our result card:
+            <ol>
+                <li><strong>Loading State:</strong> <code>@if (isLoading())</code>: If the <code>isLoading</code> signal is <code>true</code>, we show the <code>mat-spinner</code> component.</li>
+                <li><strong>Success State:</strong> <code>@else if (apiResponse())</code>: If the loading is finished and the <code>apiResponse</code> signal has a value, we display the description and value from the response.</li>
+                <li><strong>Error State:</strong> <code>@else if (error())</code>: If the loading is finished, there's no response, but the <code>error</code> signal has a value, we display the error message in a div with the class <code>error-text</code>. This provides clear feedback to the user when something goes wrong.</li>
+                <li><strong>Initial State:</strong> <code>@else</code>: If none of the above conditions are met (i.e., at the very beginning, before any interaction), we show the placeholder text.</li>
+            </ol>
+        </li>
+    </ul>
+
+    <h3>The Component's Stylesheet (`api-form.scss`)</h3>
+    <p>This file contains the styles for our component.</p>
+    <pre><code>
+.container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 50vh;
+  flex-direction: column;
+  gap: 20px;
+}
+
+mat-card {
+  width: 400px;
+  padding: 20px;
+}
+
+mat-form-field {
+  width: 100%;
+}
+
+.button-container {
+  position: relative;
+  width: 100%;
+  margin-top: 10px;
+
+  button {
+    width: 100%;
+  }
+}
+
+.result-content {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+  min-height: 150px;
+}
+
+.result-text {
+  text-align: left;
+  width: 100%;
+}
+
+.error-text {
+  color: red;
+}
+.placeholder-text{
+    color: #777;
+}
+    </code></pre>
+
+    <h2>Running the Application</h2>
+    <p>To run the application, use the following command:</p>
+    <pre><code>ng serve</code></pre>
+    <p>This will start a development server, and you can view the application in your browser at <code>http://localhost:4200/</code>.</p>
+
+    <h2>Conclusion</h2>
+    <p>In this tutorial, we have created a simple but modern Angular application that demonstrates how to build a form, interact with an API, and handle state using signals. This project serves as a good starting point for building more complex Angular applications.</p>
+
+</body>
+</html>

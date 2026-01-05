@@ -11,6 +11,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { CommonModule } from '@angular/common';
 
 import { Api } from '../../core/services/api';
+import { ApiResponse } from '../../core/models/api-response';
 
 @Component({
   selector: 'app-api-form',
@@ -32,7 +33,8 @@ export class ApiFormComponent {
   private apiService = inject(Api);
 
   public isLoading = signal(false);
-  public apiResponse = signal<any | undefined>(undefined);
+  public apiResponse = signal<ApiResponse | undefined>(undefined);
+  public error = signal<string | undefined>(undefined);
 
   form = this.fb.group({
     value: ['', [Validators.required, Validators.pattern('^[0-9]*$')]]
@@ -44,12 +46,20 @@ export class ApiFormComponent {
     }
     this.isLoading.set(true);
     this.apiResponse.set(undefined); // Clear previous results
+    this.error.set(undefined); // Clear previous errors
     
     const value = parseInt(this.form.value.value!, 10);
     this.apiService.getData(value).pipe(
       finalize(() => this.isLoading.set(false))
-    ).subscribe(response => {
-      this.apiResponse.set(response);
+    ).subscribe({
+      next: (response) => {
+        this.apiResponse.set(response);
+        console.log('API Response::', response.value);
+      },
+      error: (err) => {
+        this.error.set('An error occurred while fetching data.');
+        console.error('API Error::', err);
+      }
     });
   }
 }

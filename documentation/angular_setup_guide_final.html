@@ -30,15 +30,15 @@
 src/app/
 |-- features/
 |   |-- api-form/
-|       |-- api-form.component.ts
-|       |-- api-form.component.html
-|       |-- api-form.component.scss
+|       |-- api-form.ts
+|       |-- api-form.html
+|       |-- api-form.scss
 |
 |-- core/
 |   |-- services/
-|       |-- api.service.ts
+|       |-- api.ts
 |
-|-- app.component.ts
+|-- app.ts
 |-- app.config.ts
 |-- app.routes.ts
     </code></pre>
@@ -66,8 +66,8 @@ export const appConfig: ApplicationConfig = {
 
     <h3>3.2. Create the API Service</h3>
     <p>Generate a service for API calls:</p>
-    <pre><code>ng generate service core/services/api</code></pre>
-    <p>In <code>api.service.ts</code>, define the `getData` method:</p>
+    <pre><code>ng generate service core/services/api --skip-tests</code></pre>
+    <p>In <code>api.ts</code>, define the `getData` method:</p>
     <pre><code>
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
@@ -89,7 +89,7 @@ export class Api {
     <h3>3.3. The Ultimate Solution: Form Component with Signals</h3>
     <p>Using <strong>Signals</strong> is the best proposal for managing state from asynchronous operations in modern Angular. It provides fine-grained reactivity and simplifies the component's logic.</p>
     
-    <h4>Component TypeScript (<code>api-form.component.ts</code>)</h4>
+    <h4>Component TypeScript (<code>api-form.ts</code>)</h4>
     <p>We'll create two signals: one for the loading state and one for the API response. The `finalize` operator from RxJS is used to ensure the loading state is reset even if the API call errors.</p>
     <pre><code>
 import { Component, inject, signal } from '@angular/core';
@@ -118,10 +118,10 @@ import { Api } from '../../core/services/api';
     MatCardModule,
     MatProgressSpinnerModule
   ],
-  templateUrl: './api-form.component.html',
-  styleUrl: './api-form.component.scss',
+  templateUrl: './api-form.html',
+  styleUrl: './api-form.scss',
 })
-export class ApiFormComponent {
+export class ApiForm {
   private fb = inject(FormBuilder);
   private apiService = inject(Api);
 
@@ -149,7 +149,7 @@ export class ApiFormComponent {
 }
     </code></pre>
 
-    <h4>Component Template (<code>api-form.component.html</code>)</h4>
+    <h4>Component Template (<code>api-form.html</code>)</h4>
     <p>The template uses the signals to conditionally show a loading spinner, disable the button, and display the final result.</p>
     <pre><code>
 &lt;div style="display: flex; justify-content: center; align-items: center; min-height: 50vh; flex-direction: column; gap: 20px;"&gt;
@@ -182,8 +182,6 @@ export class ApiFormComponent {
     &lt;/mat-card-content&gt;
   &lt;/mat-card&gt;
 
-  &lt;/mat-card&gt;
-
   &lt;!-- Result Card --&gt;
   &lt;mat-card style="width: 400px; min-height: 150px; padding: 20px;"&gt;
     &lt;mat-card-title&gt;Result&lt;/mat-card-title&gt;
@@ -203,6 +201,33 @@ export class ApiFormComponent {
 &lt;/div&gt;
     </code></pre>
 
+    <h3>3.4. How Signals Work in the Template</h3>
+    <p>That's an excellent question. Understanding how signals connect your TypeScript code to your HTML template is key to mastering modern Angular.</p>
+    <h4>What is a Signal?</h4>
+    <p>Think of a signal as a "wrapper" around a value. It's a box that holds your data (e.g., `false`, `undefined`, or a JSON object). The special thing about this box is that Angular can watch it. When you change the value inside the box, Angular is immediately notified and knows exactly which parts of the HTML need to be updated. This is highly efficient.</p>
+    
+    <h4>Reading a Signal: The `()` Syntax</h4>
+    <p>In your TypeScript code, `isLoading` and `apiResponse` are the signal objects themselves. To get the value out of the box, you call the signal as a function: `isLoading()` or `apiResponse()`.</p>
+    <p>When you use this `()` syntax inside your HTML template, Angular establishes a link. It says, "Okay, this part of the HTML depends on this signal. I will watch this signal for changes and automatically update this specific part of the DOM if the value ever changes."</p>
+
+    <h4>The `isLoading` Signal in Action (The Spinner)</h4>
+    <ol>
+        <li><strong>Initial State:</strong> In the component, `isLoading` is created with the value `false`: `signal(false)`. In the HTML, `@if (isLoading())` evaluates to `false`, so the spinner is hidden.</li>
+        <li><strong>Button Click:</strong> You click the submit button. The `onSubmit` method runs.</li>
+        <li><strong>Update:</strong> The line `this.isLoading.set(true);` updates the value inside the signal to `true`.</li>
+        <li><strong>Reaction:</strong> Because the signal's value changed, Angular is instantly notified. It re-checks every place in the template that uses `isLoading()`. The `@if (isLoading())` block in the result card now becomes true, and the spinner appears. The button text also changes, and it becomes disabled.</li>
+        <li><strong>Finalization:</strong> When the API call finishes (success or error), the `finalize` operator runs `this.isLoading.set(false);`. This notifies the template again, and everything reverts to its normal state.</li>
+    </ol>
+
+    <h4>The `apiResponse` Signal in Action (The Result)</h4>
+    <ol>
+        <li><strong>Initial State:</strong> `apiResponse` is created with the value `undefined`: `signal(undefined)`. In the HTML, `@else if (apiResponse())` is `false`, and the initial placeholder text is shown.</li>
+        <li><strong>Button Click:</strong> When `onSubmit` runs, we immediately clear old results with `this.apiResponse.set(undefined);`. This ensures the old result disappears and we see the loading spinner instead.</li>
+        <li><strong>API Success:</strong> When the `subscribe` callback receives the `response` from the API, it runs `this.apiResponse.set(response);`.</li>
+        <li><strong>Reaction:</strong> Angular is notified of the change to the `apiResponse` signal. It re-evaluates the `@else if (apiResponse())` block, which is now `true`. The content of this block is rendered, and the template reads the signal's value again to display the properties: `apiResponse()?.description`.</li>
+    </ol>
+    <p>This signal-based approach removes the need for manual change detection and makes the flow of data from your component logic to your template clear and efficient.</p>
+    
     <h2>4. Handling CORS</h2>
     <p>For development, the easiest way to handle CORS errors is to use Angular's proxy. Create <code>proxy.conf.json</code> in your project root, update <code>angular.json</code> to use it, and change your service to use a relative URL like <code>/api</code>. (For full details, see the previous guide version).</p>
     <p>For production, configure your backend (e.g., a Python Flask server) to allow your frontend's domain using a library like <code>Flask-Cors</code>.</p>

@@ -1,10 +1,10 @@
-<div style="display: flex; justify-content: center; align-items: center; min-height: 50vh; flex-direction: column; gap: 20px;">
-  <mat-card style="width: 400px; padding: 20px;">
+<div class="container">
+  <mat-card>
     <mat-card-title>Calculate Square</mat-card-title>
     <mat-card-content>
       <p>Enter a number below to calculate its square. Only numeric values are accepted.</p>
       <form [formGroup]="form" (ngSubmit)="onSubmit()">
-        <mat-form-field appearance="fill" style="width: 100%;">
+        <mat-form-field appearance="fill">
           <mat-label>Enter a number</mat-label>
           <input matInput formControlName="value" type="text">
           @if (form.get('value')?.hasError('required')) {
@@ -15,8 +15,8 @@
           }
         </mat-form-field>
 
-        <div style="position: relative; width: 100%; margin-top: 10px;">
-          <button mat-raised-button color="primary" type="submit" [disabled]="!form.valid || isLoading()" style="width: 100%;">
+        <div class="button-container">
+          <button mat-raised-button color="primary" type="submit" [disabled]="!form.valid || isLoading()">
             @if (isLoading()) {
               <span>Calculating...</span>
             } @else {
@@ -32,18 +32,22 @@
 
 
   <!-- Result Card -->
-  <mat-card style="width: 400px; min-height: 150px; padding: 20px;">
+  <mat-card>
     <mat-card-title>Result</mat-card-title>
-    <mat-card-content style="display: flex; justify-content: center; align-items: center; height: 100%;">
+    <mat-card-content class="result-content">
       @if (isLoading()) {
         <mat-spinner [diameter]="50"></mat-spinner>
       } @else if (apiResponse()) {
-        <div style="text-align: left; width: 100%;">
+        <div class="result-text">
           <h3>{{ apiResponse()?.description }}</h3>
           <p>Value: <strong>{{ apiResponse()?.value }}</strong></p>
         </div>
+      } @else if (error()) {
+        <div class="error-text">
+          <p>{{ error() }}</p>
+        </div>
       } @else {
-        <p style="color: #777;">The API result will be displayed here.</p>
+        <p class="placeholder-text">The API result will be displayed here.</p>
       }
     </mat-card-content>
   </mat-card>
