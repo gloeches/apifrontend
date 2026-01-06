@@ -15,23 +15,31 @@
 
     <h1>Angular API Front-End Tutorial</h1>
 
-    <h2>Introduction</h2>
+    <p>This tutorial is divided into two parts. In Part 1, we will build a simple, single-page Angular application. In Part 2, we will enhance the application by adding routing and navigation.</p>
+
+    <hr>
+
+    <h1>Part 1: The Basic Application</h1>
+
+    <h2>Chapter 1: Project Setup and Structure</h2>
+
+    <h3>Introduction</h3>
     <p>This tutorial will guide you through the process of creating a simple Angular application that interacts with a back-end API. We will build a form where a user can input a number, send it to an API, and see the result displayed. This project uses modern Angular features, including standalone components, signals, and reactive forms.</p>
 
-    <h2>Prerequisites</h2>
+    <h3>Prerequisites</h3>
     <ul>
         <li>Node.js and npm (or yarn) installed.</li>
         <li>Angular CLI installed globally: <code>npm install -g @angular/cli</code></li>
     </ul>
 
-    <h2>Project Setup</h2>
+    <h3>Project Setup</h3>
     <p>First, we create a new Angular workspace:</p>
     <pre><code>ng new ApiFrontEnd --routing --style=scss</code></pre>
     <p>This command creates a new Angular project with routing and SCSS for styling.</p>
     <p>Next, we need to add Angular Material for UI components:</p>
     <pre><code>ng add @angular/material</code></pre>
 
-    <h2>Project Structure</h2>
+    <h3>Project Structure</h3>
     <p>A well-organized project structure is crucial for maintainability. Here is the structure of our project, with an explanation of each important file:</p>
     <pre><code>
 D:\Angular\ApiFrontEnd\
@@ -43,42 +51,35 @@ D:\Angular\ApiFrontEnd\
 ├───tsconfig.app.json
 ├───tsconfig.json
 ├───tsconfig.spec.json
-├───src\
+├───src\ 
 │   ├───index.html            # The main HTML file
 │   ├───main.ts               # The main entry point of the application
 │   ├───styles.scss           # Global styles
-│   └───app\
+│   └───app\ 
 │       ├───app.config.ts     # Application configuration, including providers
 │       ├───app.routes.ts     # Application routes
 │       ├───app.html
 │       ├───app.scss
 │       ├───app.ts
-│       ├───core\
-│       │   ├───models\
+│       ├───core\ 
+│       │   ├───models\ 
 │       │   │   └───api-response.ts  # Interface for the API response
-│       │   └───services\
+│       │   └───services\ 
 │       │       └───api.ts         # Service for API communication
-│       └───features\
-│           └───api-form\
+│       └───features\ 
+│           └───api-form\ 
 │               ├───api-form.html    # HTML template for the form component
 │               ├───api-form.scss    # Styles for the form component
 │               └───api-form.ts      # Logic for the form component
     </code></pre>
-    <ul>
-        <li><code>angular.json</code>: This file contains the configuration for your Angular project, including build settings, serve configurations, and more.</li>
-        <li><code>package.json</code>: This file lists all the project dependencies (like Angular, RxJS, etc.) and defines scripts for running, building, and testing the application.</li>
-        <li><code>src/main.ts</code>: This is the main entry point for your application. It bootstraps the main `AppComponent`.</li>
-        <li><code>src/app/app.config.ts</code>: In a standalone application, this file is used to configure the application-level providers, such as the router and `HttpClient`.</li>
-        <li><code>src/app/app.routes.ts</code>: This file defines the routes for your application.</li>
-        <li><code>src/app/core</code>: This directory contains the core logic of your application, such as services and models.</li>
-        <li><code>src/app/features</code>: This directory contains the different feature modules of your application. In our case, we have the `api-form` feature.</li>
-    </ul>
 
-    <h2>Creating the API Service</h2>
+    <h2>Chapter 2: Creating the Core Functionality</h2>
+
+    <h3>Creating the API Service</h3>
     <p>First, we create a service to handle communication with our back-end API. We can generate a new service using the Angular CLI:</p>
     <pre><code>ng generate service core/services/api --skip-tests</code></pre>
-    <p>This command creates a new service file at <code>src/app/core/services/api.ts</code>.</p>
-    <p>Here is the code for the service:</p>
+    
+    <h4>`api.ts`</h4>
     <pre><code>
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
@@ -102,7 +103,7 @@ export class Api {
     <ul>
         <li><code>@Injectable({ providedIn: 'root' })</code>: This decorator marks the class as a service that can be injected. By providing it in the 'root', Angular creates a single, shared instance of this service for the entire application. This is ideal for managing state and reusable logic.</li>
         <li><code>HttpClient</code>: This is Angular's built-in service for making HTTP requests. We inject it into our service's constructor to get access to its methods (like <code>get</code>, <code>post</code>, etc.).</li>
-        <li><code>getData(value: number): Observable<any></code>: This is the core method of our service.
+        <li><code>getData(value: number): Observable&lt;any&gt;</code>: This is the core method of our service.
             <ul>
                 <li><strong>What is an Observable?</strong> An <code>Observable</code> is a key concept from a library called RxJS (Reactive Extensions for JavaScript), which is integrated into Angular. Think of an <code>Observable</code> not as the data itself, but as a "stream" of data that can arrive over time. For an HTTP request, this stream will typically emit only one value (the HTTP response) and then complete. However, Observables can also be used for streams of multiple values, like user clicks, websocket messages, or timers.</li>
                 <li><strong>Why use an Observable?</strong> The <code>HttpClient</code> returns an <code>Observable</code> because HTTP requests are asynchronous. The application doesn't freeze and wait for the response. Instead, it "subscribes" to the Observable and provides a callback function to be executed when the data arrives. This is a powerful and efficient way to handle asynchronous operations.</li>
@@ -111,12 +112,11 @@ export class Api {
         </li>
     </ul>
 
-    <h2>Creating the API Form Component</h2>
+    <h3>Creating the API Form Component</h3>
     <p>Next, we'll create the component that contains our form. We can generate a new component using the Angular CLI:</p>
     <pre><code>ng generate component features/api-form --standalone --skip-tests</code></pre>
-    <p>This command creates a new standalone component at <code>src/app/features/api-form/</code>.</p>
     
-    <h3>The Component's TypeScript File (`api-form.ts`)</h3>
+    <h4>`api-form.ts`</h4>
     <p>This file contains the logic for our component.</p>
     <pre><code>
 import { Component, inject, signal } from '@angular/core';
@@ -154,8 +154,8 @@ export class ApiFormComponent {
   private apiService = inject(Api);
 
   public isLoading = signal(false);
-  public apiResponse = signal<ApiResponse | undefined>(undefined);
-  public error = signal<string | undefined>(undefined);
+  public apiResponse = signal&lt;ApiResponse | undefined&gt;(undefined);
+  public error = signal&lt;string | undefined&gt;(undefined);
 
   form = this.fb.group({
     value: ['', [Validators.required, Validators.pattern('^[0-9]*$')]]
@@ -187,26 +187,26 @@ export class ApiFormComponent {
     <h4>A Deeper Look at the Component's Logic</h4>
     <ul>
         <li><code>@Component({...})</code>: This decorator defines the component's metadata, including its selector, template, styles, and imports.</li>
-        <li><code>standalone: true</code>: This marks the component as a standalone component, which means it doesn't need to be declared in an `NgModule`.</li>
-        <li><code>inject(FormBuilder)</code>: We use the `inject` function to get an instance of the `FormBuilder` service, which helps us create reactive forms.</li>
-        <li><code>signal(...)</code>: We use signals to manage the component's state. `isLoading` is a boolean signal that tracks the loading state, `apiResponse` holds the response from the API, and `error` holds any error messages. Signals are a new feature in Angular that provide a more efficient and fine-grained way to manage state changes and update the view.</li>
-        <li><code>this.fb.group({...})</code>: We use the `FormBuilder` to create a new `FormGroup` with a single control, `value`. We also add validators to ensure the input is required and is a number.</li>
-        <li><code>onSubmit()</code>: This method is called when the form is submitted. It sets the loading state, calls the `apiService.getData()` method, and then updates the `apiResponse` or `error` signal based on the result.
+        <li><code>standalone: true</code>: This marks the component as a standalone component, which means it doesn't need to be declared in an <code>NgModule</code>.</li>
+        <li><code>inject(FormBuilder)</code>: We use the <code>inject</code> function to get an instance of the <code>FormBuilder</code> service, which helps us create reactive forms.</li>
+        <li><code>signal(...)</code>: We use signals to manage the component's state. <code>isLoading</code> is a boolean signal that tracks the loading state, <code>apiResponse</code> holds the response from the API, and <code>error</code> holds any error messages. Signals are a new feature in Angular that provide a more efficient and fine-grained way to manage state changes and update the view.</li>
+        <li><code>this.fb.group({...})</code>: We use the <code>FormBuilder</code> to create a new <code>FormGroup</code> with a single control, <code>value</code>. We also add validators to ensure the input is required and is a number.</li>
+        <li><code>onSubmit()</code>: This method is called when the form is submitted. It sets the loading state, calls the <code>apiService.getData()</code> method, and then updates the <code>apiResponse</code> or <code>error</code> signal based on the result.
             <ul>
-                <li><strong>The RxJS `pipe()` Method:</strong> The <code>pipe()</code> method is a feature of RxJS Observables that allows you to chain together "operators" to process the data in the stream. An operator is a function that takes an Observable as input and returns a new Observable. In our case, we are using the <code>finalize</code> operator.</li>
+                <li><strong>The RxJS <code>pipe()</code> Method:</strong> The <code>pipe()</code> method is a feature of RxJS Observables that allows you to chain together "operators" to process the data in the stream. An operator is a function that takes an Observable as input and returns a new Observable. In our case, we are using the <code>finalize</code> operator.</li>
                 <li><strong>The `finalize` Operator:</strong> The <code>finalize</code> operator is a powerful tool for side effects. It takes a callback function that will be executed when the Observable completes (either by successfully emitting a value or by erroring out). We use it here to guarantee that <code>this.isLoading.set(false)</code> is always called, ensuring our loading spinner doesn't get stuck on the screen if the API call fails.</li>
             </ul>
         </li>
         <li>
             <strong>The `subscribe()` Method:</strong> This is where we actually "listen" to the Observable stream. We pass an object with two methods:
             <ul>
-                <li><code>next: (response) => {...}</code>: This function is called when the Observable successfully emits a value (i.e., the HTTP request was successful). We take the response and update our `apiResponse` signal.</li>
-                <li><code>error: (err) => {...}</code>: This function is called if the Observable emits an error (i.e., the HTTP request failed). We set our `error` signal with a user-friendly message and log the actual error to the console for debugging.</li>
+                <li><code>next: (response) =&gt; {...}</code>: This function is called when the Observable successfully emits a value (i.e., the HTTP request was successful). We take the response and update our <code>apiResponse</code> signal.</li>
+                <li><code>error: (err) =&gt; {...}</code>: This function is called if the Observable emits an error (i.e., the HTTP request failed). We set our <code>error</code> signal with a user-friendly message and log the actual error to the console for debugging.</li>
             </ul>
         </li>
     </ul>
-
-    <h3>The Component's Template (`api-form.html`)</h3>
+    
+    <h4>`api-form.html`</h4>
     <p>This file contains the HTML for our component.</p>
     <pre><code>
 &lt;div class="container"&gt;
@@ -264,79 +264,186 @@ export class ApiFormComponent {
   &lt;/mat-card&gt;
 &lt;/div&gt;
     </code></pre>
-    <h4>A Deeper Look at the Template and Error Handling</h4>
+    <h4>A Deeper Look at the Template</h4>
     <ul>
-        <li><code>[formGroup]="form"</code>: This directive binds our form to the `form` `FormGroup` in the component's class.</li>
-        <li><code>(ngSubmit)="onSubmit()"</code>: This event binding calls the `onSubmit()` method when the form is submitted.</li>
-        <li>
-            <strong>Conditional Rendering with <code>@if</code>, <code>@else if</code>, and <code>@else</code>:</strong> This is Angular's new built-in control flow syntax. It's used here to create a clear and readable state machine for our result card:
-            <ol>
-                <li><strong>Loading State:</strong> <code>@if (isLoading())</code>: If the <code>isLoading</code> signal is <code>true</code>, we show the <code>mat-spinner</code> component.</li>
-                <li><strong>Success State:</strong> <code>@else if (apiResponse())</code>: If the loading is finished and the <code>apiResponse</code> signal has a value, we display the description and value from the response.</li>
-                <li><strong>Error State:</strong> <code>@else if (error())</code>: If the loading is finished, there's no response, but the <code>error</code> signal has a value, we display the error message in a div with the class <code>error-text</code>. This provides clear feedback to the user when something goes wrong.</li>
-                <li><strong>Initial State:</strong> <code>@else</code>: If none of the above conditions are met (i.e., at the very beginning, before any interaction), we show the placeholder text.</li>
-            </ol>
-        </li>
+        <li><code>[formGroup]=&quot;form&quot;</code>: This is a property binding that links the <code>form</code> element in the template to the <code>form</code> <code>FormGroup</code> object we created in the component's class.</li>
+        <li><code>(ngSubmit)=&quot;onSubmit()&quot;</code>: This is an event binding that tells Angular to call the <code>onSubmit()</code> method in our component class whenever the form is submitted (e.g., by clicking the submit button).</li>
+        <li><code>formControlName=&quot;value&quot;</code>: This directive links the input field to the <code>value</code> form control within our <code>FormGroup</code>.</li>
+        <li><code>&#64;if (isLoading()) {...}</code>: This is Angular's new built-in control flow syntax. It's used here to create a clear and readable state machine for our result card. The content of the result card changes based on the values of the <code>isLoading</code>, <code>apiResponse</code>, and <code>error</code> signals.</li>
     </ul>
 
-    <h3>The Component's Stylesheet (`api-form.scss`)</h3>
-    <p>This file contains the styles for our component.</p>
+    <h3>Displaying the Component</h3>
+    <p>To display our <code>api-form</code> component, we need to add it to our main <code>app</code> component.</p>
+    <h4>`app.html`</h4>
     <pre><code>
-.container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 50vh;
-  flex-direction: column;
-  gap: 20px;
-}
+&lt;app-api-form&gt;&lt;/app-api-form&gt;
+    </code></pre>
+    <h4>`app.ts`</h4>
+    <pre><code>
+import { Component } from '@angular/core';
+import { ApiFormComponent } from './features/api-form/api-form';
 
-mat-card {
-  width: 400px;
-  padding: 20px;
-}
-
-mat-form-field {
-  width: 100%;
-}
-
-.button-container {
-  position: relative;
-  width: 100%;
-  margin-top: 10px;
-
-  button {
-    width: 100%;
-  }
-}
-
-.result-content {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 100%;
-  min-height: 150px;
-}
-
-.result-text {
-  text-align: left;
-  width: 100%;
-}
-
-.error-text {
-  color: red;
-}
-.placeholder-text{
-    color: #777;
+@Component({
+  selector: 'app-root',
+  standalone: true,
+  imports: [ApiFormComponent],
+  templateUrl: './app.html',
+  styleUrls: ['./app.scss']
+})
+export class App {
+  title = 'ApiFrontEnd';
 }
     </code></pre>
 
-    <h2>Running the Application</h2>
+    <hr>
+
+    <h1>Part 2: Adding a Navigation and Routing</h1>
+    <p>Now that we have a basic, functional application, let's enhance it by adding routing and a navigation bar. This will allow us to have multiple pages and switch between them.</p>
+
+    <h2>Chapter 3: Implementing Routing and Navigation</h2>
+    <p>A key feature of modern web applications is the ability to navigate between different pages or views without a full page reload. This is handled by a router. In this chapter, we'll add a navigation bar and set up routing to navigate between three different pages: a "Square Calculator", a "Cube Calculator", and an "About" page.</p>
+
+    <h3>1. Creating the Navigation Components</h3>
+    <p>First, we create the new components we'll need for our navigation. We'll create a <code>nav-bar</code> component, an <code>about</code> component, and a <code>cube-form</code> component to demonstrate routing to a different API endpoint.</p>
+    <pre><code>ng generate component features/nav-bar --standalone --skip-tests
+ng generate component features/about --standalone --skip-tests
+ng generate component features/cube-form --standalone --skip-tests</code></pre>
+
+    <h3>2. Building the Navigation Bar</h3>
+    <p>The <code>nav-bar</code> component will contain the links to our different pages. We'll use Angular Material's <code>mat-toolbar</code> and <code>mat-button</code> components to create a simple and clean navigation bar.</p>
+
+    <h4>`nav-bar.html`</h4>
+    <pre><code>
+&lt;mat-toolbar color="primary"&gt;
+  &lt;a mat-button routerLink="/square"&gt;Square Calculator&lt;/a&gt;
+  &lt;a mat-button routerLink="/cube"&gt;Cube Calculator&lt;/a&gt;
+  &lt;a mat-button routerLink="/about"&gt;About&lt;/a&gt;
+&lt;/mat-toolbar&gt;
+    </code></pre>
+    <ul>
+        <li><strong><code>mat-toolbar</code></strong>: This is a container for headers, titles, or actions. By setting <code>color=&quot;primary&quot;</code>, we give it the primary color of our application's theme.</li>
+        <li><strong><code>routerLink</code></strong>: This is the most important directive here. It's provided by Angular's <code>RouterModule</code> and tells the router where to navigate when the link is clicked. For example, <code>routerLink=&quot;/square&quot;</code> will navigate to the "square" route.</li>
+    </ul>
+
+    <h4>`nav-bar.ts`</h4>
+    <p>To use the <code>mat-toolbar</code>, <code>mat-button</code>, and <code>routerLink</code>, we need to import the corresponding modules into our <code>nav-bar</code> component.</p>
+    <pre><code>
+import { Component } from '@angular/core';
+import { MatToolbarModule } from '@angular/material/toolbar';
+import { MatButtonModule } from '@angular/material/button';
+import { RouterModule } from '@angular/router';
+
+@Component({
+  selector: 'app-nav-bar',
+  standalone: true,
+  imports: [MatToolbarModule, MatButtonModule, RouterModule],
+  templateUrl: './nav-bar.html',
+  styleUrls: ['./nav-bar.scss']
+})
+export class NavBar {
+
+}
+    </code></pre>
+
+    <h3>3. Configuring the Routes</h3>
+    <p>Now that we have our navigation links, we need to tell the Angular router which component to display for each route. We do this in the <code>src/app/app.routes.ts</code> file.</p>
+
+    <h4>`app.routes.ts`</h4>
+    <pre><code>
+import { Routes } from '@angular/router';
+import { ApiFormComponent } from './features/api-form/api-form';
+import { About } from './features/about/about';
+import { CubeFormComponent } from './features/cube-form/cube-form';
+
+export const routes: Routes = [
+    { path: '', redirectTo: '/about', pathMatch: 'full' },
+    { path: 'square', component: ApiFormComponent },
+    { path: 'cube', component: CubeFormComponent },
+    { path: 'about', component: About },
+];
+    </code></pre>
+    <ul>
+        <li><strong><code>routes: Routes</code></strong>: This is an array of <code>Route</code> objects. Each object defines a route.</li>
+        <li><strong><code>path</code></strong>: The URL path for the route (e.g., <code>'square'</code>).</li>
+        <li><strong><code>component</code></strong>: The component to display when the route is active.</li>
+        <li><strong><code>redirectTo</code></strong>: This is used to redirect from one route to another. In our case, we redirect the empty path (<code>''</code>) to <code>/about</code>, so the "About" page is the default page that users see when they first visit the application.</li>
+        <li><strong><code>pathMatch: 'full'</code></strong>: This tells the router to match the empty path exactly. This is important to ensure that the redirect only happens for the empty path and not for other paths.</li>
+    </ul>
+
+    <h3>4. Putting It All Together in the App Component</h3>
+    <p>Finally, we need to add our <code>nav-bar</code> and a special directive called <code>&lt;router-outlet&gt;</code> to our main app component's template. The <code>&lt;router-outlet&gt;</code> is a placeholder that Angular dynamically fills with the component corresponding to the current route.</p>
+
+    <h4>`app.html`</h4>
+    <pre><code>
+&lt;app-nav-bar&gt;&lt;/app-nav-bar&gt;
+&lt;router-outlet&gt;&lt;/router-outlet&gt;
+    </code></pre>
+    <h4>A Deeper Look at the <code>router-outlet</code></h4>
+    <p>The <code>&lt;router-outlet&gt;</code> is a directive from the <code>RouterModule</code> that acts as a placeholder. When you navigate to a different route, the router clears the content of the <code>router-outlet</code> and inserts the component associated with the new route. This is the core mechanism of Angular's single-page application (SPA) architecture.</p>
+
+    <h4>`app.ts`</h4>
+    <p>We also need to import the <code>NavBar</code> component and <code>RouterModule</code> into our main <code>App</code> component.</p>
+    <pre><code>
+import { Component } from '@angular/core';
+import { RouterModule } from '@angular/router';
+import { NavBar } from './features/nav-bar/nav-bar';
+import { ApiFormComponent } from './features/api-form/api-form';
+import { CubeFormComponent } from './features/cube-form/cube-form';
+import { About } from './features/about/about';
+
+@Component({
+  selector: 'app-root',
+  standalone: true,
+  imports: [NavBar, RouterModule, ApiFormComponent, CubeFormComponent, About],
+  templateUrl: './app.html',
+  styleUrls: ['./app.scss']
+})
+export class App {
+  title = 'ApiFrontEnd';
+}
+    </code></pre>
+    <p>With these changes, our application now has a fully functional navigation bar and routing system. When a user clicks a link in the navigation bar, the <code>routerLink</code> directive updates the URL, and the router outlet renders the corresponding component.</p>
+
+    <h3>5. Highlighting the Active Route</h3>
+    <p>A good user experience includes visually indicating which page is currently active in the navigation bar. Angular's router makes this easy with the <code>routerLinkActive</code> directive.</p>
+
+    <h4>Updating the Navigation Bar Template (<code>nav-bar.html</code>)</h4>
+    <p>We'll add the <code>routerLinkActive</code> directive to each link in our navigation bar. This directive will automatically add a CSS class to the link when its corresponding route is active.</p>
+    <pre><code>
+&lt;mat-toolbar color="primary"&gt;
+  &lt;a mat-button routerLink="/square" routerLinkActive="active-link"&gt;Square Calculator&lt;/a&gt;
+  &lt;a mat-button routerLink="/cube" routerLinkActive="active-link"&gt;Cube Calculator&lt;/a&gt;
+  &lt;a mat-button routerLink="/about" routerLinkActive="active-link"&gt;About&lt;/a&gt;
+&lt;/mat-toolbar&gt;
+    </code></pre>
+    <h4>A Deeper Look at <code>routerLinkActive</code></h4>
+    <ul>
+        <li><strong>What it does:</strong> The <code>routerLinkActive</code> directive toggles a CSS class on the element it's attached to. When the URL in the browser matches the path specified in the <code>routerLink</code> directive on the same element, <code>routerLinkActive</code> adds the specified class. When the URL no longer matches, it removes the class.</li>
+        <li><strong>How it matches:</strong> By default, <code>routerLinkActive</code> uses "contains" logic. This means that if the current URL is <code>/user/profile</code>, a link with <code>routerLink=&quot;/user&quot;</code> will be considered active. This is useful for navigation menus with multiple levels.</li>
+        <li><strong>Exact Matching:</strong> In our case, all our links are top-level, so the default behavior is fine. However, if you have nested routes and you want a link to be active only when the URL exactly matches the <code>routerLink</code> path, you can use the <code>[routerLinkActiveOptions]</code> input. For example:
+            <pre><code>&lt;a routerLink="/user" routerLinkActive="active-link" [routerLinkActiveOptions]="{ exact: true }"&gt;User&lt;/a&gt;</code></pre>
+            This link will only be active when the URL is exactly <code>/user</code>, and not when it's <code>/user/profile</code>.
+        </li>
+    </ul>
+
+    <h4>Styling the Active Link (<code>nav-bar.scss</code>)</h4>
+    <p>Now, we need to define the <code>active-link</code> class in our <code>nav-bar.scss</code> file to provide the visual feedback.</p>
+    <pre><code>
+.active-link {
+    background-color: #bbdefb; /* A light, bright blue */
+    color: #1e88e5; /* A darker blue for the text */
+    border-radius: 15px; /* More rounded corners for a rectangular shape */
+    padding: 5px 15px; /* Add some padding for the rounded shape to be visible */
+}
+    </code></pre>
+    <p>With these changes, the currently active navigation link will be highlighted with a bright blue, rounded rectangle, making the user's current location in the application clear.</p>
+
+    <h2>Chapter 4: Running the Application</h2>
     <p>To run the application, use the following command:</p>
     <pre><code>ng serve</code></pre>
     <p>This will start a development server, and you can view the application in your browser at <code>http://localhost:4200/</code>.</p>
 
-    <h2>Conclusion</h2>
+    <h2>Chapter 5: Conclusion</h2>
     <p>In this tutorial, we have created a simple but modern Angular application that demonstrates how to build a form, interact with an API, and handle state using signals. This project serves as a good starting point for building more complex Angular applications.</p>
 
 </body>

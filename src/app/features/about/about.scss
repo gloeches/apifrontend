@@ -1,0 +1,13 @@
+.container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 50vh;
+  flex-direction: column;
+  gap: 20px;
+}
+
+mat-card {
+  width: 400px;
+  padding: 20px;
+}

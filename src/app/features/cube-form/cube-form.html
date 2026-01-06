@@ -1,0 +1,54 @@
+<div class="container">
+  <mat-card>
+    <mat-card-title>Calculate Cube</mat-card-title>
+    <mat-card-content>
+      <p>Enter a number below to calculate its cube. Only numeric values are accepted.</p>
+      <form [formGroup]="form" (ngSubmit)="onSubmit()">
+        <mat-form-field appearance="fill">
+          <mat-label>Enter a number</mat-label>
+          <input matInput formControlName="value" type="text">
+          @if (form.get('value')?.hasError('required')) {
+            <mat-error>This field is required.</mat-error>
+          }
+          @if (form.get('value')?.hasError('pattern')) {
+            <mat-error>Please enter a valid number.</mat-error>
+          }
+        </mat-form-field>
+
+        <div class="button-container">
+          <button mat-raised-button color="primary" type="submit" [disabled]="!form.valid || isLoading()">
+            @if (isLoading()) {
+              <span>Calculating...</span>
+            } @else {
+              <span>Calculate Cube</span>
+            }
+          </button>
+         
+        </div>
+      </form>
+    </mat-card-content>
+  </mat-card>
+
+
+
+  <!-- Result Card -->
+  <mat-card>
+    <mat-card-title>Result</mat-card-title>
+    <mat-card-content class="result-content">
+      @if (isLoading()) {
+        <mat-spinner [diameter]="50"></mat-spinner>
+      } @else if (apiResponse()) {
+        <div class="result-text">
+          <h3>{{ apiResponse()?.description }}</h3>
+          <p>Value: <strong>{{ apiResponse()?.value }}</strong></p>
+        </div>
+      } @else if (error()) {
+        <div class="error-text">
+          <p>{{ error() }}</p>
+        </div>
+      } @else {
+        <p class="placeholder-text">The API result will be displayed here.</p>
+      }
+    </mat-card-content>
+  </mat-card>
+</div>
