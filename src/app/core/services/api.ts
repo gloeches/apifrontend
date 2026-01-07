@@ -1,15 +1,19 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { RuntimeConfigService } from './runtime-config-service';
 
 @Injectable({
   providedIn: 'root',
 })
 export class Api {
-  private squareApiUrl = 'http://192.168.0.148:2000/api';
-  private cubeApiUrl = 'http://192.168.0.148:2000/api/cube';
+  private squareApiUrl: string;
+  private cubeApiUrl: string;
 
-  constructor(private http: HttpClient) { }
+  constructor(private http: HttpClient, private configService: RuntimeConfigService) {
+    this.squareApiUrl = this.configService.config.squareApiUrl;
+    this.cubeApiUrl = this.configService.config.cubeApiUrl;
+   }
 
   getData(value: number): Observable<any> {
     const params = new HttpParams().set('value', value.toString());

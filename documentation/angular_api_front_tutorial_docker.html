@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dockerizing the Angular Application</title>
+    <style>
+        body { font-family: sans-serif; line-height: 1.6; padding: 20px; max-width: 800px; margin: auto; }
+        h1, h2, h3, h4 { color: #333; }
+        code { background-color: #f4f4f4; padding: 2px 4px; border-radius: 4px; font-family: 'Courier New', Courier, monospace; }
+        pre { background-color: #f4f4f4; padding: 10px; border-radius: 4px; white-space: pre-wrap; word-wrap: break-word; }
+        .note { background-color: #e7f3fe; border-left: 6px solid #2196F3; padding: 10px; margin: 20px 0; }
+    </style>
+</head>
+<body>
+
+    <h1>Dockerizing the Angular Application with Runtime Configuration</h1>
+
+    <p>This document is an extension of the <a href="angular_api_front_tutorial.html">original tutorial</a>. It is recommended to be familiar with the base project before proceeding.</p>
+    <p>Here, we will discuss the necessary changes to adapt our Angular application for a Docker environment, focusing on how to manage external configuration like API endpoints dynamically.</p>
+
+    <hr>
+
+    <h2>Chapter 1: The Problem with Hardcoded Configuration</h2>
+
+    <p>In the original version of our application, the API endpoints were hardcoded directly into our <code>api.ts</code> service file:</p>
+
+    <pre><code>
+// The "old" way in api.ts
+export class Api {
+  private squareApiUrl = 'http://springboot-esxi:2000/api';
+  private cubeApiUrl = 'http://192.168.0.148:2000/api/cube';
+  // ...
+}
+    </code></pre>
+
+    <p>This approach has a major drawback: <strong>it's not portable</strong>. If you want to deploy the application in different environments (e.g., development, testing, production), you would need to change the code and rebuild the entire Angular application for each environment. This is inefficient and goes against the "build once, run anywhere" philosophy of containers.</p>
+
+    <h2>Chapter 2: The Solution - Runtime Configuration</h2>
+
+    <p>To solve this, we externalize the configuration into a file that is loaded when the application starts up. This allows us to use the exact same compiled code in any environment, and simply provide a different configuration file at runtime.</p>
+    <p>We achieve this using Angular's <code>provideAppInitializer</code> function, which we configured in <code>app.config.ts</code> to fetch a file named <code>config.json</code> from the <code>assets</code> folder and load its content into the <code>RuntimeConfigService</code>.</p>
+    
+    <h3>Step 1: Creating `config.json`</h3>
+    <p>First, we create a <code>public/config.json</code> file. Any files in the <code>public</code> directory are copied directly to the root of the application output during the build. This file serves as a default for local development.</p>
+    <pre><code>
+{
+  "squareApiUrl": "http://springboot-esxi:2000/api",
+  "cubeApiUrl": "http://192.168.0.148:2000/api/cube",
+  "config": "configuracion1"
+}
+    </code></pre>
+    
+    <h3>Step 2: Modifying the API Service</h3>
+    <p>Next, we refactored the <code>api.ts</code> service to read the URLs from the <code>RuntimeConfigService</code> instead of having them hardcoded. We inject the service in the constructor and assign the URLs.</p>
+    <pre><code>
+import { Injectable } from '@angular/core';
+import { HttpClient, HttpParams } from '@angular/common/http';
+import { Observable } from 'rxjs';
+import { RuntimeConfigService } from './runtime-config-service';
+
+@Injectable({
+  providedIn: 'root',
+})
+export class Api {
+  private squareApiUrl: string;
+  private cubeApiUrl: string;
+
+  constructor(private http: HttpClient, private configService: RuntimeConfigService) {
+    this.squareApiUrl = this.configService.config.squareApiUrl;
+    this.cubeApiUrl = this.configService.config.cubeApiUrl;
+   }
+
+  getData(value: number): Observable&lt;any&gt; {
+    const params = new HttpParams().set('value', value.toString());
+    return this.http.get(this.squareApiUrl, { params });
+  }
+
+  getCubeData(value: number): Observable&lt;any&gt; {
+    const params = new HttpParams().set('value', value.toString());
+    return this.http.get(this.cubeApiUrl, { params });
+  }
+}
+    </code></pre>
+    <p>With these changes, our application is no longer dependent on hardcoded values and is ready to be containerized.</p>
+
+    <h3>Step 3: Configuring the App Initializer</h3>
+    <p>The final and most critical piece is configuring the application's startup behavior in <code>src/app/app.config.ts</code>. This file tells Angular what services and features to make available to the entire application. We use a special provider here to ensure our external configuration is loaded <em>before</em> any part of the UI is rendered.</p>
+
+    <h4>The Angular Initialization Workflow</h4>
+    <p>Here is a step-by-step breakdown of what happens when the application starts:</p>
+    <ol>
+        <li><strong>Bootstrap:</strong> The process begins in <code>main.ts</code>, where Angular's <code>bootstrapApplication</code> function is called with our root component (<code>App</code>) and our application configuration (<code>appConfig</code>).</li>
+        <li><strong>Provider Registration:</strong> Angular starts setting up the application's environment by processing the <code>providers</code> array from <code>appConfig</code>. It sees providers for routing, HTTP services, and our <code>RuntimeConfigService</code>.</li>
+        <li><strong>App Initialization:</strong> Angular then encounters <code>provideAppInitializer(initializeApp)</code>. This is a special instruction. It tells Angular: "Before you finish starting the app and rendering the main component, you must first execute the <code>initializeApp</code> function and wait for it to complete."</li>
+        <li><strong>Execution Pause:</strong> The <code>initializeApp</code> function returns a <code>Promise</code>. The entire application bootstrap process now <strong>pauses</strong> and waits for this promise to be resolved. This is the key to our solution, as it prevents the application from trying to make API calls before it knows where the API is.</li>
+        <li><strong>Fetching Configuration:</strong> Inside <code>initializeApp</code>, the <code>inject</code> function is used to get instances of <code>HttpClient</code> and our <code>RuntimeConfigService</code>. An HTTP GET request is fired off to fetch the <code>/config.json</code> file.</li>
+        <li><strong>Storing Configuration:</strong> Once the file is successfully fetched, the <code>.then()</code> block of the promise runs. The configuration data from the JSON file is stored in the <code>config</code> property of the shared <code>RuntimeConfigService</code> instance.</li>
+        <li><strong>Resuming Bootstrap:</strong> With the configuration now stored, the promise resolves. Angular detects this and resumes the bootstrap process.</li>
+        <li><strong>Component Rendering:</strong> Now, and only now, does Angular proceed to create and render the main <code>App</code> component and its children. When services like our <code>Api</code> service are created, they can safely inject the <code>RuntimeConfigService</code> and immediately access the API URLs from its <code>config</code> property.</li>
+    </ol>
+    <p>This workflow guarantees that your application is fully configured before any user interaction can occur, making it robust and ready for dynamic, environment-specific deployments.</p>
+    <pre><code>
+import { ApplicationConfig, provideZoneChangeDetection, provideAppInitializer, inject } from '@angular/core';
+import { provideRouter } from '@angular/router';
+
+import { routes } from './app.routes';
+import { HttpClient, provideHttpClient, withFetch } from '@angular/common/http';
+import { RuntimeConfigService } from './core/services/runtime-config-service';
+import { lastValueFrom } from 'rxjs';
+
+function initializeApp() {
+  const configService = inject(RuntimeConfigService);
+  const http = inject(HttpClient);
+  return lastValueFrom(http.get('/config.json')).then(config => {
+    configService.config = config;
+  });
+}
+
+export const appConfig: ApplicationConfig = {
+  providers: [
+    provideZoneChangeDetection({ eventCoalescing: true }),
+    provideRouter(routes),
+    provideHttpClient(withFetch()),
+    RuntimeConfigService,
+    provideAppInitializer(initializeApp),
+  ]
+};
+    </code></pre>
+
+    <hr>
+
+    <h2>Chapter 3: Optimizing the Docker Build Context with <code>.dockerignore</code></h2>
+
+    <p>Before we create the Dockerfile, it's crucial to ensure we are only sending the necessary files to the Docker daemon. When you run <code>docker build</code>, Docker first collects all files in the current directory (the "build context") and sends them to the daemon. This can be slow and inefficient if it includes large, unnecessary folders like <code>node_modules</code> or a previously built <code>dist</code> folder.</p>
+
+    <p>To prevent this, we create a <code>.dockerignore</code> file in the project root. This file works just like <code>.gitignore</code>, telling Docker which files and folders to exclude from the build context.</p>
+
+    <h3>Creating the <code>.dockerignore</code> file</h3>
+    <p>Create a file named <code>.dockerignore</code> in the project root with the following content:</p>
+    <pre><code>
+# Git and VS Code
+.git
+.vscode
+
+# Node dependencies and local build artifacts
+node_modules
+dist
+npm-debug.log
+
+# Docker-related files that don't need to be in the image
+.dockerignore
+Dockerfile
+nginx.conf
+</code></pre>
+    <div class="note">
+        <p>By adding <code>dist</code> and <code>node_modules</code> to <code>.dockerignore</code>, you guarantee that every Docker build starts from a clean slate, using the source code to install dependencies and build the application inside the container, which is a critical best practice.</p>
+    </div>
+
+
+    <h2>Chapter 4: Creating a Dockerfile</h2>
+
+    <p>Now we'll create our multi-stage Dockerfile. The first stage (<code>builder</code>) builds the application, and the second (<code>runner</code>) serves it.</p>
+    <p>Create a file named <code>Dockerfile</code> in the root of the project:</p>
+
+    <pre><code>
+# Stage 1: Build the Angular application
+FROM node:18 AS builder
+WORKDIR /app
+
+# Copy only package.json and install dependencies first
+# This takes advantage of Docker layer caching
+COPY package*.json ./
+RUN npm install
+
+# Copy the rest of the application source code
+COPY . .
+RUN npm run build
+
+# Stage 2: Serve the application from Nginx
+FROM nginx:alpine AS runner
+# Copy the compiled output from the builder stage
+COPY --from=builder /app/dist/ApiFrontEnd/browser /usr/share/nginx/html
+# Copy the default nginx configuration
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+
+EXPOSE 80
+</code></pre>
+    <div class="note">
+        <p><strong>Note on the Output Path:</strong> The path <code>/app/dist/ApiFrontEnd/browser</code> corresponds to the default build output location for a project named "ApiFrontEnd". If you customize this path, you'll need to update the <code>COPY</code> command accordingly (see the Appendix for more details).</p>
+    </div>
+
+    <h3>Nginx Configuration</h3>
+    <p>Create a file named <code>nginx.conf</code> to handle SPA routing:</p>
+    <pre><code>
+server {
+  listen 80;
+  server_name localhost;
+
+  root /usr/share/nginx/html;
+  index index.html index.htm;
+
+  location / {
+    try_files $uri $uri/ /index.html;
+  }
+}
+</code></pre>
+
+    <h2>Chapter 5: Building and Running the Docker Container</h2>
+
+    <h3>Build the Image</h3>
+    <pre><code>docker build -t api-front-end .</code></pre>
+
+    <h3>Run the Container</h3>
+    <pre><code>docker run -d -p 8080:80 --name my-app api-front-end</code></pre>
+    <p>You can now access the application at <code>http://localhost:8080</code>.</p>
+
+    <h3>Overriding Configuration with Docker</h3>
+    <p>Create a <code>prod.config.json</code> file:</p>
+    <pre><code>
+{
+  "squareApiUrl": "https://prod.api.com/square",
+  "cubeApiUrl": "https://prod.api.com/cube",
+  "config": "production"
+}
+</code></pre>
+
+    <p>Run the container, mounting the production config:</p>
+    <pre><code>docker run -d -p 8080:80 --name my-prod-app \
+-v ./prod.config.json:/usr/share/nginx/html/config.json \
+api-front-end</code></pre>
+    
+    <div class="note">
+        <p><strong>Explanation:</strong> The <code>-v</code> flag mounts the local file to the path <code>/usr/share/nginx/html/config.json</code> inside the container, overwriting the default one and allowing runtime configuration.</p>
+    </div>
+
+    <hr>
+
+    <h2>Appendix: Advanced Configuration</h2>
+    <h3>Customizing the Build Output Path</h3>
+    <p>If you don't want to use the default <code>dist/ApiFrontEnd</code> output directory, you can specify a custom path in your <code>angular.json</code> file.</p>
+    <p>In the <code>build</code> architect options, add the <code>outputPath</code> property:</p>
+    <pre><code>
+"architect": {
+  "build": {
+    "builder": "@angular/build:application",
+    "options": {
+      "outputPath": "dist/my-app",
+      "browser": "src/main.ts",
+      "tsConfig": "tsconfig.app.json",
+      // ...
+    },
+    // ...
+  }
+}
+</code></pre>
+    <p>If you make this change, you <strong>must</strong> also update your <code>Dockerfile</code> to copy the files from the new location:</p>
+    <pre><code>
+# In your Dockerfile, update this line:
+COPY --from=builder /app/dist/my-app/browser /usr/share/nginx/html
+</code></pre>
+    <p>This ensures that the Nginx server can find your application's compiled files.</p>
+</body>
+</html>
