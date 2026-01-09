@@ -1,0 +1,12 @@
+# Git and VS Code
+.git
+.vscode
+
+# Node dependencies and local build artifacts
+node_modules
+dist
+npm-debug.log
+
+# Docker-related files that don't need to be in the image
+.dockerignore
+Dockerfile

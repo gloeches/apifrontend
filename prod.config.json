@@ -1,0 +1,5 @@
+{
+  "squareApiUrl": "http://desarrolloo:2000/api",
+  "cubeApiUrl": "http://192.168.0.148:2000/api/cube",
+  "config": "configuracion1"
+}
